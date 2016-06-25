@@ -1,0 +1,105 @@
+package angland.optimizer.var;
+
+import static org.junit.Assert.assertEquals;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.junit.Test;
+
+public class MatrixTest {
+
+  private static final double TOLERANCE = 10e-3;
+
+  /**
+   * Verify a simple case of matrix multiplication. <br/>
+   * <br/>
+   * | 1,2,3 | |1,2| | 22, 28 | <br/>
+   * | 4,5,6 | x |3,4| = | 49, 64 | <br/>
+   * |5,6|
+   */
+  @Test
+  public void testMatrixMultiply() {
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    MatrixExpression<String> leftMatrix = MatrixExpression.variable("left", 2, 3);
+    context.put(IndexedKey.matrixKey("left", 0, 0), 1.0);
+    context.put(IndexedKey.matrixKey("left", 0, 1), 2.0);
+    context.put(IndexedKey.matrixKey("left", 0, 2), 3.0);
+    context.put(IndexedKey.matrixKey("left", 1, 0), 4.0);
+    context.put(IndexedKey.matrixKey("left", 1, 1), 5.0);
+    context.put(IndexedKey.matrixKey("left", 1, 2), 6.0);
+    MatrixExpression<String> rightMatrix = MatrixExpression.variable("right", 3, 2);
+    context.put(IndexedKey.matrixKey("right", 0, 0), 1.0);
+    context.put(IndexedKey.matrixKey("right", 0, 1), 2.0);
+    context.put(IndexedKey.matrixKey("right", 1, 0), 3.0);
+    context.put(IndexedKey.matrixKey("right", 1, 1), 4.0);
+    context.put(IndexedKey.matrixKey("right", 2, 0), 5.0);
+    context.put(IndexedKey.matrixKey("right", 2, 1), 6.0);
+    MatrixValue<String> product = leftMatrix.times(rightMatrix).evaluate(context);
+    assertEquals(2, product.getHeight());
+    assertEquals(2, product.getWidth());
+    assertEquals(22.0, product.getCalculation(0, 0).value(), TOLERANCE);
+    assertEquals(28.0, product.getCalculation(0, 1).value(), TOLERANCE);
+    assertEquals(49.0, product.getCalculation(1, 0).value(), TOLERANCE);
+    assertEquals(64.0, product.getCalculation(1, 1).value(), TOLERANCE);
+  }
+
+  @Test
+  public void testMatrixAdd() {
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    MatrixExpression<String> leftMatrix = MatrixExpression.variable("m", 2, 2);
+    context.put(IndexedKey.matrixKey("m", 0, 0), 1.0);
+    context.put(IndexedKey.matrixKey("m", 0, 1), 2.0);
+    context.put(IndexedKey.matrixKey("m", 1, 0), 4.0);
+    context.put(IndexedKey.matrixKey("m", 1, 1), 5.0);
+    MatrixValue<String> sum = leftMatrix.plus(leftMatrix).evaluate(context);
+    assertEquals(2, sum.getHeight());
+    assertEquals(2, sum.getWidth());
+    assertEquals(2, sum.getCalculation(0, 0).value(), TOLERANCE);
+    assertEquals(4, sum.getCalculation(0, 1).value(), TOLERANCE);
+    assertEquals(8, sum.getCalculation(1, 0).value(), TOLERANCE);
+    assertEquals(10, sum.getCalculation(1, 1).value(), TOLERANCE);
+  }
+
+  @Test
+  public void testScalarTimesMatrix() {
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    MatrixExpression<String> matrix = MatrixExpression.variable("m", 2, 2);
+    context.put(IndexedKey.matrixKey("m", 0, 0), 1.0);
+    context.put(IndexedKey.matrixKey("m", 0, 1), 2.0);
+    context.put(IndexedKey.matrixKey("m", 1, 0), 4.0);
+    context.put(IndexedKey.matrixKey("m", 1, 1), 5.0);
+    Expression<String> scalar = Expression.constant(3);
+    MatrixValue<String> product = scalar.times(matrix).evaluate(context);
+    assertEquals(2, product.getHeight());
+    assertEquals(2, product.getWidth());
+    assertEquals(3, product.getCalculation(0, 0).value(), TOLERANCE);
+    assertEquals(6, product.getCalculation(0, 1).value(), TOLERANCE);
+    assertEquals(12, product.getCalculation(1, 0).value(), TOLERANCE);
+    assertEquals(15, product.getCalculation(1, 1).value(), TOLERANCE);
+  }
+
+  @Test
+  public void largeMatrixPerformanceTest() {
+    int size = 250;
+    MatrixExpression<String> left = MatrixExpression.variable("left", size, size);
+    MatrixExpression<String> right = MatrixExpression.variable("right", size, size);
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    for (int i = 0; i < size; ++i) {
+      for (int j = 0; j < size; ++j) {
+        context.put(IndexedKey.matrixKey("left", i, j), Math.random());
+        context.put(IndexedKey.matrixKey("right", i, j), Math.random());
+      }
+    }
+    // warmup
+    left.times(right).evaluate(context);
+    long start = System.currentTimeMillis();
+    // run
+    left.times(right).evaluate(context);
+    long end = System.currentTimeMillis();
+    System.out.println("Run time millis = " + (end - start));
+  }
+
+
+
+}
