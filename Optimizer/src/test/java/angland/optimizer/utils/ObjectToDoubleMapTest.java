@@ -48,9 +48,9 @@ public class ObjectToDoubleMapTest {
   @Test
   public void performanceTestRepeatedInsert() {
     long start = System.currentTimeMillis();
-    ObjectToDoubleMap<String> s = new ObjectToDoubleMap<>(1, .75);
+    ObjectToDoubleMap<Integer> s = new ObjectToDoubleMap<>(1, .75);
     for (int i = 0; i < 10e8; ++i) {
-      s.put("a", 2);
+      s.put(1, 2);
     }
     long end = System.currentTimeMillis();
     System.out.println("ObjectToDouble insert time " + (end - start));
@@ -59,9 +59,9 @@ public class ObjectToDoubleMapTest {
   @Test
   public void performanceTestRepeatedMerge() {
     long start = System.currentTimeMillis();
-    ObjectToDoubleMap<String> s = new ObjectToDoubleMap<>(1, .75);
+    ObjectToDoubleMap<Integer> s = new ObjectToDoubleMap<>(1, .75);
     for (int i = 0; i < 10e8; ++i) {
-      s.adjust("a", 2);
+      s.adjust(1, 2);
     }
     long end = System.currentTimeMillis();
     System.out.println("ObjectToDouble merge time " + (end - start));
@@ -70,9 +70,9 @@ public class ObjectToDoubleMapTest {
   @Test
   public void hashMapTestRepeatedInsert() {
     long start = System.currentTimeMillis();
-    Map<String, Double> s = new HashMap<String, Double>(1, .75f);
+    Map<Integer, Double> s = new HashMap<Integer, Double>(1, .75f);
     for (int i = 0; i < 10e8; ++i) {
-      s.put("a", 2.0);
+      s.put(1, 2.0);
     }
     long end = System.currentTimeMillis();
     System.out.println("Hashmap insert time " + (end - start));
@@ -81,9 +81,9 @@ public class ObjectToDoubleMapTest {
   @Test
   public void hashMapTestRepeatedMerge() {
     long start = System.currentTimeMillis();
-    Map<String, Double> s = new HashMap<String, Double>(1, .75f);
+    Map<Integer, Double> s = new HashMap<Integer, Double>(1, .75f);
     for (int i = 0; i < 10e8; ++i) {
-      s.merge("a", 2.0, Double::sum);
+      s.merge(1, 2.0, Double::sum);
     }
     long end = System.currentTimeMillis();
     System.out.println("Hashmap merge time " + (end - start));

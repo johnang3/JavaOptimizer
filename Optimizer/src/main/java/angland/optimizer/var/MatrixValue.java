@@ -58,10 +58,23 @@ public class MatrixValue<VarKey> extends MatrixBase<VarKey> {
     Builder<VarKey> builder = new Builder<>(this.getHeight(), other.getWidth());
     for (int i = 0; i < this.getHeight(); ++i) {
       for (int j = 0; j < other.getWidth(); ++j) {
-        Calculation.Builder<VarKey> sumBuilder = new Calculation.Builder<>();
+        Calculation.Builder<VarKey> sumBuilder = new Calculation.Builder<>(this.getWidth() * 3);
         for (int k = 0; k < this.getWidth(); ++k) {
-          Calculation<VarKey> x = this.getCalculation(i, k).times(other.getCalculation(k, j));
-          sumBuilder.increment(x);
+          Calculation<VarKey> left = this.getCalculation(i, k);
+          Calculation<VarKey> right = other.getCalculation(k, j);
+          sumBuilder.incrementValue(left.value() * right.value());
+          for (Map.Entry<IndexedKey<VarKey>, Double> entry : left.getGradient().entrySet()) {
+            if (entry.getValue() != 0) {
+              sumBuilder.getGradient().merge(entry.getKey(), entry.getValue() * right.value(),
+                  Double::sum);
+            }
+          }
+          for (Map.Entry<IndexedKey<VarKey>, Double> entry : right.getGradient().entrySet()) {
+            if (entry.getValue() != 0) {
+              sumBuilder.getGradient().merge(entry.getKey(), entry.getValue() * left.value(),
+                  Double::sum);
+            }
+          }
         }
         builder.set(i, j, sumBuilder.build(context));
       }

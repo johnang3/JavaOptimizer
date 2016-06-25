@@ -62,7 +62,11 @@ public class Calculation<VarKey> {
 
   public static class Builder<VarKey> {
     private double value = 0;
-    private final Map<IndexedKey<VarKey>, Double> gradient = new HashMap<>();
+    private final Map<IndexedKey<VarKey>, Double> gradient;
+
+    public Builder(int gradientVars) {
+      gradient = new HashMap<>(gradientVars);
+    }
 
     public double getValue() {
       return value;
