@@ -12,13 +12,13 @@ import angland.optimizer.vec.MathUtils;
  *
  * @param <VarKey>
  */
-public class Calculation<VarKey> {
+public class ScalarValue<VarKey> {
 
   private final double value;
   private final Map<IndexedKey<VarKey>, Double> gradient;
   private final Map<IndexedKey<VarKey>, Double> context;
 
-  Calculation(double value, Map<IndexedKey<VarKey>, Double> gradient,
+  ScalarValue(double value, Map<IndexedKey<VarKey>, Double> gradient,
       Map<IndexedKey<VarKey>, Double> context) {
     super();
     this.value = value;
@@ -38,14 +38,32 @@ public class Calculation<VarKey> {
     return gradient;
   }
 
-  public Calculation<VarKey> plus(Calculation<VarKey> other) {
+  public ScalarValue<VarKey> plus(ScalarValue<VarKey> other) {
     double newVal = value + other.value();
     Map<IndexedKey<VarKey>, Double> newGrad = MathUtils.add(gradient, other.gradient);
-    return new Calculation<>(newVal, newGrad, context);
+    return new ScalarValue<>(newVal, newGrad, context);
+  }
+
+  public ScalarValue<VarKey> divide(ScalarValue<VarKey> other) {
+    return times(other.power(-1));
+  }
+
+  /**
+   * Returns e^x, where x is this calculation.
+   * 
+   * @return
+   */
+  public ScalarValue<VarKey> exp() {
+    double newVal = Math.exp(value);
+    Map<IndexedKey<VarKey>, Double> newGrad = new HashMap<>();
+    for (Map.Entry<IndexedKey<VarKey>, Double> e : gradient.entrySet()) {
+      newGrad.put(e.getKey(), Math.exp(e.getValue()));
+    }
+    return new ScalarValue<>(newVal, newGrad, context);
   }
 
   @SuppressWarnings("unchecked")
-  public static <VarKey> Calculation<VarKey> sum(Calculation<VarKey>... args) {
+  public static <VarKey> ScalarValue<VarKey> sum(ScalarValue<VarKey>... args) {
     if (args.length == 0) {
       throw new IllegalArgumentException("Cannot take the sum of zero elements.");
     }
@@ -53,11 +71,11 @@ public class Calculation<VarKey> {
     Map<IndexedKey<VarKey>, Double> newGrad = new HashMap<>();
     Consumer<Map.Entry<IndexedKey<VarKey>, Double>> accumulator =
         entry -> newGrad.merge(entry.getKey(), entry.getValue(), Double::sum);
-    for (Calculation<VarKey> calc : args) {
+    for (ScalarValue<VarKey> calc : args) {
       newVal += calc.value();
       calc.getGradient().entrySet().forEach(accumulator);
     }
-    return new Calculation<>(newVal, newGrad, args[0].context);
+    return new ScalarValue<>(newVal, newGrad, args[0].context);
   }
 
   public static class Builder<VarKey> {
@@ -80,7 +98,7 @@ public class Calculation<VarKey> {
       this.value += value;
     }
 
-    public void increment(Calculation<VarKey> other) {
+    public void increment(ScalarValue<VarKey> other) {
       this.value += other.value();
       other.getGradient().forEach((k, v) -> gradient.merge(k, v, Double::sum));
     }
@@ -89,13 +107,13 @@ public class Calculation<VarKey> {
       return gradient;
     }
 
-    public Calculation<VarKey> build(Map<IndexedKey<VarKey>, Double> context) {
-      return new Calculation<>(value, gradient, context);
+    public ScalarValue<VarKey> build(Map<IndexedKey<VarKey>, Double> context) {
+      return new ScalarValue<>(value, gradient, context);
     }
 
   }
 
-  public Calculation<VarKey> times(Calculation<VarKey> other) {
+  public ScalarValue<VarKey> times(ScalarValue<VarKey> other) {
     double newVal = value * other.value();
     Map<IndexedKey<VarKey>, Double> newGrad =
         new HashMap<>(gradient.size() + other.gradient.size(), 1);
@@ -107,18 +125,18 @@ public class Calculation<VarKey> {
       if (entry.getValue() == 0) continue;
       newGrad.merge(entry.getKey(), entry.getValue() * this.value(), Double::sum);
     }
-    return new Calculation<>(newVal, newGrad, context);
+    return new ScalarValue<>(newVal, newGrad, context);
   }
 
-  public Calculation<VarKey> power(double exponent) {
+  public ScalarValue<VarKey> power(double exponent) {
     double newVal = Math.pow(value, exponent);
     Map<IndexedKey<VarKey>, Double> newGradient = new HashMap<>(gradient.size(), 1);
     gradient.forEach((k, v) -> newGradient.put(k, exponent * Math.pow(value, exponent - 1)));
-    return new Calculation<>(newVal, newGradient, context);
+    return new ScalarValue<>(newVal, newGradient, context);
   }
 
-  public MatrixValue<VarKey> times(MatrixValue<VarKey> matrix) {
-    return MatrixValue.times(this, matrix);
+  public ArrayMatrixValue<VarKey> times(IMatrixValue<VarKey> matrix) {
+    return ArrayMatrixValue.times(this, matrix);
   }
 
   public String toString() {

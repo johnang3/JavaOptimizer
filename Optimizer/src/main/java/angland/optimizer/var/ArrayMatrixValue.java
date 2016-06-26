@@ -3,16 +3,16 @@ package angland.optimizer.var;
 import java.util.Map;
 
 
-public class MatrixValue<VarKey> extends MatrixBase<VarKey> {
+public class ArrayMatrixValue<VarKey> extends MatrixBase<VarKey> implements IMatrixValue<VarKey> {
 
-  private final Calculation<VarKey>[] values;
+  private final ScalarValue<VarKey>[] values;
   private final Map<IndexedKey<VarKey>, Double> context;
 
   public Map<IndexedKey<VarKey>, Double> getContext() {
     return context;
   }
 
-  private MatrixValue(int height, int width, Calculation<VarKey>[] values,
+  protected ArrayMatrixValue(int height, int width, ScalarValue<VarKey>[] values,
       Map<IndexedKey<VarKey>, Double> context) {
     super(height, width);
     this.values = values;
@@ -20,11 +20,11 @@ public class MatrixValue<VarKey> extends MatrixBase<VarKey> {
   }
 
   @Override
-  protected Calculation<VarKey>[] values() {
+  protected ScalarValue<VarKey>[] values() {
     return values;
   }
 
-  public MatrixValue<VarKey> add(MatrixValue<VarKey> other) {
+  public ArrayMatrixValue<VarKey> add(ArrayMatrixValue<VarKey> other) {
     if (this.getHeight() != other.getHeight()) {
       throw new RuntimeException("Cannot add matrices of differing heights.");
     }
@@ -40,8 +40,8 @@ public class MatrixValue<VarKey> extends MatrixBase<VarKey> {
     return newMatrix.build(other.getContext());
   }
 
-  public static <VarKey> MatrixValue<VarKey> times(Calculation<VarKey> scalar,
-      MatrixValue<VarKey> matrix) {
+  public static <VarKey> ArrayMatrixValue<VarKey> times(ScalarValue<VarKey> scalar,
+      IMatrixValue<VarKey> matrix) {
     Builder<VarKey> newMatrix = new Builder<>(matrix.getHeight(), matrix.getWidth());
     for (int i = 0; i < matrix.getHeight(); ++i) {
       for (int j = 0; j < matrix.getHeight(); ++j) {
@@ -51,17 +51,18 @@ public class MatrixValue<VarKey> extends MatrixBase<VarKey> {
     return newMatrix.build(scalar.getContext());
   }
 
-  public MatrixValue<VarKey> times(MatrixValue<VarKey> other) {
+  public ArrayMatrixValue<VarKey> times(ArrayMatrixValue<VarKey> other) {
     if (this.getWidth() != other.getHeight()) {
-      throw new IllegalArgumentException("Width of left matrix must equal height of right matrix.");
+      throw new IllegalArgumentException("Width of left matrix (" + getWidth()
+          + ") must equal height of right matrix (" + other.getHeight() + ")");
     }
     Builder<VarKey> builder = new Builder<>(this.getHeight(), other.getWidth());
     for (int i = 0; i < this.getHeight(); ++i) {
       for (int j = 0; j < other.getWidth(); ++j) {
-        Calculation.Builder<VarKey> sumBuilder = new Calculation.Builder<>(this.getWidth() * 3);
+        ScalarValue.Builder<VarKey> sumBuilder = new ScalarValue.Builder<>(this.getWidth() * 3);
         for (int k = 0; k < this.getWidth(); ++k) {
-          Calculation<VarKey> left = this.getCalculation(i, k);
-          Calculation<VarKey> right = other.getCalculation(k, j);
+          ScalarValue<VarKey> left = this.getCalculation(i, k);
+          ScalarValue<VarKey> right = other.getCalculation(k, j);
           sumBuilder.incrementValue(left.value() * right.value());
           for (Map.Entry<IndexedKey<VarKey>, Double> entry : left.getGradient().entrySet()) {
             if (entry.getValue() != 0) {
@@ -84,26 +85,26 @@ public class MatrixValue<VarKey> extends MatrixBase<VarKey> {
 
   public static class Builder<VarKey> extends MatrixBase<VarKey> {
 
-    private final Calculation<VarKey>[] values;
+    protected final ScalarValue<VarKey>[] values;
 
     @SuppressWarnings("unchecked")
     public Builder(int height, int width) {
       super(height, width);
-      this.values = (Calculation<VarKey>[]) new Calculation[height * width];
+      this.values = (ScalarValue<VarKey>[]) new ScalarValue[height * width];
     }
 
     @Override
-    protected Calculation<VarKey>[] values() {
+    protected ScalarValue<VarKey>[] values() {
       return values;
     }
 
-    public void set(int row, int column, Calculation<VarKey> calc) {
+    public void set(int row, int column, ScalarValue<VarKey> calc) {
       validateCoords(row, column);
       values()[column + getWidth() * row] = calc;
     }
 
-    public MatrixValue<VarKey> build(Map<IndexedKey<VarKey>, Double> context) {
-      return new MatrixValue<>(getHeight(), getWidth(), values, context);
+    public ArrayMatrixValue<VarKey> build(Map<IndexedKey<VarKey>, Double> context) {
+      return new ArrayMatrixValue<>(getHeight(), getWidth(), values, context);
     }
 
   }

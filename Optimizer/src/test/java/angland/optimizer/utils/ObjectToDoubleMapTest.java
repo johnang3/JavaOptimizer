@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 
@@ -45,6 +46,7 @@ public class ObjectToDoubleMapTest {
     assertEquals(100.0, m.get("a"), 0.0);
   }
 
+  @Ignore
   @Test
   public void performanceTestRepeatedInsert() {
     long start = System.currentTimeMillis();
@@ -56,6 +58,7 @@ public class ObjectToDoubleMapTest {
     System.out.println("ObjectToDouble insert time " + (end - start));
   }
 
+  @Ignore
   @Test
   public void performanceTestRepeatedMerge() {
     long start = System.currentTimeMillis();
@@ -67,6 +70,7 @@ public class ObjectToDoubleMapTest {
     System.out.println("ObjectToDouble merge time " + (end - start));
   }
 
+  @Ignore
   @Test
   public void hashMapTestRepeatedInsert() {
     long start = System.currentTimeMillis();
@@ -78,6 +82,7 @@ public class ObjectToDoubleMapTest {
     System.out.println("Hashmap insert time " + (end - start));
   }
 
+  @Ignore
   @Test
   public void hashMapTestRepeatedMerge() {
     long start = System.currentTimeMillis();

@@ -3,8 +3,8 @@ package angland.optimizer.optimizer;
 import java.util.HashMap;
 import java.util.Map;
 
-import angland.optimizer.var.Calculation;
-import angland.optimizer.var.Expression;
+import angland.optimizer.var.ScalarValue;
+import angland.optimizer.var.ScalarExpression;
 import angland.optimizer.var.IndexedKey;
 
 
@@ -17,7 +17,7 @@ public class GradientDescentOptimizer {
    * 
    * @return
    */
-  public static <VarType> Map<IndexedKey<VarType>, Double> step(Calculation<VarType> calculation,
+  public static <VarType> Map<IndexedKey<VarType>, Double> step(ScalarValue<VarType> calculation,
       Map<VarType, Range> variableRanges, double gradientMultiplier) {
     if (gradientMultiplier <= 0) {
       throw new RuntimeException("MaxStepDistance must be greater than 0.");
@@ -40,12 +40,12 @@ public class GradientDescentOptimizer {
     return result;
   }
 
-  public static <VarType> Calculation<VarType> stepToMinimum(Expression<VarType> expression,
+  public static <VarType> ScalarValue<VarType> stepToMinimum(ScalarExpression<VarType> expression,
       Map<IndexedKey<VarType>, Double> initialContext, Map<VarType, Range> variableRanges,
       double step, double minStep) {
-    Calculation<VarType> best = expression.evaluate(initialContext);
+    ScalarValue<VarType> best = expression.evaluate(initialContext);
     while (step > minStep) {
-      Calculation<VarType> next = null;
+      ScalarValue<VarType> next = null;
       while ((next = expression.evaluate(step(best, variableRanges, step))).value() < best.value()) {
         best = next;
       }

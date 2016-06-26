@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class MatrixTest {
@@ -35,7 +36,7 @@ public class MatrixTest {
     context.put(IndexedKey.matrixKey("right", 1, 1), 4.0);
     context.put(IndexedKey.matrixKey("right", 2, 0), 5.0);
     context.put(IndexedKey.matrixKey("right", 2, 1), 6.0);
-    MatrixValue<String> product = leftMatrix.times(rightMatrix).evaluate(context);
+    IMatrixValue<String> product = leftMatrix.times(rightMatrix).evaluate(context);
     assertEquals(2, product.getHeight());
     assertEquals(2, product.getWidth());
     assertEquals(22.0, product.getCalculation(0, 0).value(), TOLERANCE);
@@ -52,7 +53,7 @@ public class MatrixTest {
     context.put(IndexedKey.matrixKey("m", 0, 1), 2.0);
     context.put(IndexedKey.matrixKey("m", 1, 0), 4.0);
     context.put(IndexedKey.matrixKey("m", 1, 1), 5.0);
-    MatrixValue<String> sum = leftMatrix.plus(leftMatrix).evaluate(context);
+    IMatrixValue<String> sum = leftMatrix.plus(leftMatrix).evaluate(context);
     assertEquals(2, sum.getHeight());
     assertEquals(2, sum.getWidth());
     assertEquals(2, sum.getCalculation(0, 0).value(), TOLERANCE);
@@ -69,8 +70,8 @@ public class MatrixTest {
     context.put(IndexedKey.matrixKey("m", 0, 1), 2.0);
     context.put(IndexedKey.matrixKey("m", 1, 0), 4.0);
     context.put(IndexedKey.matrixKey("m", 1, 1), 5.0);
-    Expression<String> scalar = Expression.constant(3);
-    MatrixValue<String> product = scalar.times(matrix).evaluate(context);
+    ScalarExpression<String> scalar = ScalarExpression.constant(3);
+    IMatrixValue<String> product = scalar.times(matrix).evaluate(context);
     assertEquals(2, product.getHeight());
     assertEquals(2, product.getWidth());
     assertEquals(3, product.getCalculation(0, 0).value(), TOLERANCE);
@@ -79,6 +80,28 @@ public class MatrixTest {
     assertEquals(15, product.getCalculation(1, 1).value(), TOLERANCE);
   }
 
+  @Test
+  public void testTranspose() {
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    MatrixExpression<String> matrix = MatrixExpression.variable("m", 2, 3);
+    context.put(IndexedKey.matrixKey("m", 0, 0), 1.0);
+    context.put(IndexedKey.matrixKey("m", 0, 1), 2.0);
+    context.put(IndexedKey.matrixKey("m", 0, 2), 3.0);
+    context.put(IndexedKey.matrixKey("m", 1, 0), 4.0);
+    context.put(IndexedKey.matrixKey("m", 1, 1), 5.0);
+    context.put(IndexedKey.matrixKey("m", 1, 2), 6.0);
+    IMatrixValue<String> transpose = matrix.transpose().evaluate(context);
+    assertEquals(3, transpose.getHeight());
+    assertEquals(2, transpose.getWidth());
+    assertEquals(1, transpose.getCalculation(0, 0).value(), TOLERANCE);
+    assertEquals(4, transpose.getCalculation(0, 1).value(), TOLERANCE);
+    assertEquals(2, transpose.getCalculation(1, 0).value(), TOLERANCE);
+    assertEquals(5, transpose.getCalculation(1, 1).value(), TOLERANCE);
+    assertEquals(3, transpose.getCalculation(2, 0).value(), TOLERANCE);
+    assertEquals(6, transpose.getCalculation(2, 1).value(), TOLERANCE);
+  }
+
+  @Ignore
   @Test
   public void largeMatrixPerformanceTest() {
     int size = 250;
@@ -97,9 +120,29 @@ public class MatrixTest {
     // run
     left.times(right).evaluate(context);
     long end = System.currentTimeMillis();
-    System.out.println("Run time millis = " + (end - start));
+    System.out.println("Matrix times matrix time millis = " + (end - start));
   }
 
-
+  @Ignore
+  @Test
+  public void vectorTimeMatrixPerformanceTest() {
+    int size = 500;
+    MatrixExpression<String> left = MatrixExpression.variable("left", 1, size);
+    MatrixExpression<String> right = MatrixExpression.variable("right", size, size);
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    for (int i = 0; i < size; ++i) {
+      context.put(IndexedKey.matrixKey("left", 0, i), Math.random());
+      for (int j = 0; j < size; ++j) {
+        context.put(IndexedKey.matrixKey("right", i, j), Math.random());
+      }
+    }
+    // warmup
+    left.times(right).evaluate(context);
+    long start = System.currentTimeMillis();
+    // run
+    left.times(right).evaluate(context);
+    long end = System.currentTimeMillis();
+    System.out.println("Vector times matrix time millis = " + (end - start));
+  }
 
 }

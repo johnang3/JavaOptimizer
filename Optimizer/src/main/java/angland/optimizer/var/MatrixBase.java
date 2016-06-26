@@ -17,7 +17,7 @@ abstract class MatrixBase<VarType> {
    * 
    * @return
    */
-  protected abstract Calculation<VarType>[] values();
+  protected abstract ScalarValue<VarType>[] values();
 
   public int getHeight() {
     return height;
@@ -27,7 +27,7 @@ abstract class MatrixBase<VarType> {
     return width;
   }
 
-  public Calculation<VarType> getCalculation(int row, int column) {
+  public ScalarValue<VarType> getCalculation(int row, int column) {
     validateCoords(row, column);
     return values()[column + getWidth() * row];
   }
