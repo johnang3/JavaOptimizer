@@ -51,38 +51,6 @@ public class ArrayMatrixValue<VarKey> extends MatrixBase<VarKey> implements IMat
     return newMatrix.build(scalar.getContext());
   }
 
-  public ArrayMatrixValue<VarKey> times(ArrayMatrixValue<VarKey> other) {
-    if (this.getWidth() != other.getHeight()) {
-      throw new IllegalArgumentException("Width of left matrix (" + getWidth()
-          + ") must equal height of right matrix (" + other.getHeight() + ")");
-    }
-    Builder<VarKey> builder = new Builder<>(this.getHeight(), other.getWidth());
-    for (int i = 0; i < this.getHeight(); ++i) {
-      for (int j = 0; j < other.getWidth(); ++j) {
-        ScalarValue.Builder<VarKey> sumBuilder = new ScalarValue.Builder<>(this.getWidth() * 3);
-        for (int k = 0; k < this.getWidth(); ++k) {
-          ScalarValue<VarKey> left = this.getCalculation(i, k);
-          ScalarValue<VarKey> right = other.getCalculation(k, j);
-          sumBuilder.incrementValue(left.value() * right.value());
-          for (Map.Entry<IndexedKey<VarKey>, Double> entry : left.getGradient().entrySet()) {
-            if (entry.getValue() != 0) {
-              sumBuilder.getGradient().merge(entry.getKey(), entry.getValue() * right.value(),
-                  Double::sum);
-            }
-          }
-          for (Map.Entry<IndexedKey<VarKey>, Double> entry : right.getGradient().entrySet()) {
-            if (entry.getValue() != 0) {
-              sumBuilder.getGradient().merge(entry.getKey(), entry.getValue() * left.value(),
-                  Double::sum);
-            }
-          }
-        }
-        builder.set(i, j, sumBuilder.build(context));
-      }
-    }
-    return builder.build(context);
-  }
-
   public static class Builder<VarKey> extends MatrixBase<VarKey> {
 
     protected final ScalarValue<VarKey>[] values;

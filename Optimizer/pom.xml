@@ -8,7 +8,6 @@
 	<description>Mathemtical optimization tools.
 Mathematical optimization tools.</description>
 	<build>
-		<sourceDirectory>src</sourceDirectory>
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>

@@ -43,6 +43,7 @@ public interface IMatrixValue<VarKey> {
           ScalarValue<VarKey> left = this.getCalculation(i, k);
           ScalarValue<VarKey> right = other.getCalculation(k, j);
           sumBuilder.incrementValue(left.value() * right.value());
+
           for (Map.Entry<IndexedKey<VarKey>, Double> entry : left.getGradient().entrySet()) {
             if (entry.getValue() != 0) {
               sumBuilder.getGradient().merge(entry.getKey(), entry.getValue() * right.value(),

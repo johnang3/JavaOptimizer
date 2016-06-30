@@ -123,10 +123,9 @@ public class MatrixTest {
     System.out.println("Matrix times matrix time millis = " + (end - start));
   }
 
-  @Ignore
   @Test
   public void vectorTimeMatrixPerformanceTest() {
-    int size = 500;
+    int size = 1000;
     MatrixExpression<String> left = MatrixExpression.variable("left", 1, size);
     MatrixExpression<String> right = MatrixExpression.variable("right", size, size);
     Map<IndexedKey<String>, Double> context = new HashMap<>();
@@ -137,10 +136,14 @@ public class MatrixTest {
       }
     }
     // warmup
-    left.times(right).evaluate(context);
+    for (int i = 0; i < 10; ++i) {
+      left.times(right).evaluate(context);
+    }
     long start = System.currentTimeMillis();
     // run
-    left.times(right).evaluate(context);
+    for (int i = 0; i < 10; ++i) {
+      left.times(right).evaluate(context);
+    }
     long end = System.currentTimeMillis();
     System.out.println("Vector times matrix time millis = " + (end - start));
   }

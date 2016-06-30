@@ -4,25 +4,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class ObjectToDoubleMap<Key> {
+public class ObjectToFloatMap<Key> {
 
   private List<Entry<Key>>[] arr;
   private final double loadFactor;
   private int size;
 
-  private ObjectToDoubleMap(List<Entry<Key>>[] arr, double loadFactor, int size) {
+  private ObjectToFloatMap(List<Entry<Key>>[] arr, double loadFactor, int size) {
     this.arr = arr;
     this.loadFactor = loadFactor;
     this.size = size;
   }
 
   @SuppressWarnings("unchecked")
-  public ObjectToDoubleMap(int initialSize, double loadFactor) {
+  public ObjectToFloatMap(int initialSize, double loadFactor) {
     this(new List[initialSize], loadFactor, 0);
   }
 
   @SuppressWarnings("unchecked")
-  public ObjectToDoubleMap(int initialSize) {
+  public ObjectToFloatMap(int initialSize) {
     this(new List[initialSize], 1.0, 0);
   }
 
@@ -61,7 +61,7 @@ public class ObjectToDoubleMap<Key> {
     return entry == null ? 0 : entry.getValue();
   }
 
-  public void put(Key key, double value) {
+  public void put(Key key, float value) {
     int bucketIdx = key.hashCode() % arr.length;
     List<Entry<Key>> bucket = arr[bucketIdx];
     Entry<Key> entry = getEntryFromBucket(key, bucket);
@@ -107,7 +107,7 @@ public class ObjectToDoubleMap<Key> {
     }
   }
 
-  public void adjust(Key key, double shift) {
+  public void adjust(Key key, float shift) {
     int bucketIdx = key.hashCode() % arr.length;
     List<Entry<Key>> bucket = arr[bucketIdx];
     Entry<Key> entry = getEntryFromBucket(key, bucket);
@@ -119,7 +119,7 @@ public class ObjectToDoubleMap<Key> {
     }
   }
 
-  public ObjectToDoubleMap<Key> cloneWithMultiplier(double multiplier) {
+  public ObjectToFloatMap<Key> cloneWithMultiplier(float multiplier) {
     @SuppressWarnings("unchecked")
     List<Entry<Key>>[] a2 = new List[arr.length];
     for (int i = 0; i < arr.length; ++i) {
@@ -131,7 +131,7 @@ public class ObjectToDoubleMap<Key> {
         }
       }
     }
-    return new ObjectToDoubleMap<>(a2, loadFactor, size);
+    return new ObjectToFloatMap<>(a2, loadFactor, size);
   }
 
   public Stream<Entry<Key>> entries() {
@@ -146,9 +146,9 @@ public class ObjectToDoubleMap<Key> {
 
   public static class Entry<Key> {
     private final Key key;
-    private double value;
+    private float value;
 
-    public Entry(Key key, double value) {
+    public Entry(Key key, float value) {
       super();
       this.key = key;
       this.value = value;
@@ -162,7 +162,7 @@ public class ObjectToDoubleMap<Key> {
       return value;
     }
 
-    public void setValue(double value) {
+    public void setValue(float value) {
       this.value = value;
     }
   }

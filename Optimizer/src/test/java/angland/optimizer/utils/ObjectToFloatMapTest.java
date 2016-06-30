@@ -5,22 +5,21 @@ import static org.junit.Assert.assertEquals;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 
-public class ObjectToDoubleMapTest {
+public class ObjectToFloatMapTest {
 
   @Test
   public void testPutAndGet() {
-    ObjectToDoubleMap<String> m = new ObjectToDoubleMap<String>(1, .75);
-    m.put("a", 1.0);
-    m.put("b", 2.0);
-    m.put("c", 3.0);
-    m.put("d", 4.0);
-    m.put("e", 5.0);
-    m.put("a", 6.0);
-    m.put("b", 7.0);
+    ObjectToFloatMap<String> m = new ObjectToFloatMap<String>(1, .75);
+    m.put("a", 1.0f);
+    m.put("b", 2.0f);
+    m.put("c", 3.0f);
+    m.put("d", 4.0f);
+    m.put("e", 5.0f);
+    m.put("a", 6.0f);
+    m.put("b", 7.0f);
     assertEquals(6.0, m.get("a"), 0.0);
     assertEquals(7.0, m.get("b"), 0.0);
     assertEquals(3.0, m.get("c"), 0.0);
@@ -30,27 +29,26 @@ public class ObjectToDoubleMapTest {
 
   @Test
   public void testCloneWithMultiplier() {
-    ObjectToDoubleMap<String> m = new ObjectToDoubleMap<String>(3);
+    ObjectToFloatMap<String> m = new ObjectToFloatMap<String>(3);
     m.put("a", 10);
-    ObjectToDoubleMap<String> tripled = m.cloneWithMultiplier(3);
+    ObjectToFloatMap<String> tripled = m.cloneWithMultiplier(3);
     assertEquals(tripled.size(), 1);
     assertEquals(30, tripled.get("a"), 0.0);
   }
 
   @Test
   public void testIncrement() {
-    ObjectToDoubleMap<String> m = new ObjectToDoubleMap<>(1, .75);
+    ObjectToFloatMap<String> m = new ObjectToFloatMap<>(1, .75);
     for (int i = 0; i < 100; ++i) {
-      m.adjust("a", 1.0);
+      m.adjust("a", 1.0f);
     }
     assertEquals(100.0, m.get("a"), 0.0);
   }
 
-  @Ignore
   @Test
   public void performanceTestRepeatedInsert() {
     long start = System.currentTimeMillis();
-    ObjectToDoubleMap<Integer> s = new ObjectToDoubleMap<>(1, .75);
+    ObjectToFloatMap<Integer> s = new ObjectToFloatMap<>(1, .75);
     for (int i = 0; i < 10e8; ++i) {
       s.put(1, 2);
     }
@@ -58,11 +56,10 @@ public class ObjectToDoubleMapTest {
     System.out.println("ObjectToDouble insert time " + (end - start));
   }
 
-  @Ignore
   @Test
   public void performanceTestRepeatedMerge() {
     long start = System.currentTimeMillis();
-    ObjectToDoubleMap<Integer> s = new ObjectToDoubleMap<>(1, .75);
+    ObjectToFloatMap<Integer> s = new ObjectToFloatMap<>(1, .75);
     for (int i = 0; i < 10e8; ++i) {
       s.adjust(1, 2);
     }
@@ -70,7 +67,6 @@ public class ObjectToDoubleMapTest {
     System.out.println("ObjectToDouble merge time " + (end - start));
   }
 
-  @Ignore
   @Test
   public void hashMapTestRepeatedInsert() {
     long start = System.currentTimeMillis();
@@ -82,7 +78,6 @@ public class ObjectToDoubleMapTest {
     System.out.println("Hashmap insert time " + (end - start));
   }
 
-  @Ignore
   @Test
   public void hashMapTestRepeatedMerge() {
     long start = System.currentTimeMillis();
