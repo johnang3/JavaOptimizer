@@ -47,7 +47,7 @@ public interface ScalarExpression<VarKey> {
    * @return
    */
   public static <VarType> ScalarExpression<VarType> constant(double value) {
-    return (ctx, cache) -> new ScalarValue<>(value, new HashMap<>(0), ctx);
+    return (ctx, cache) -> new ScalarValue<>(value, new HashMap<>(0));
   }
 
   /**
@@ -74,7 +74,7 @@ public interface ScalarExpression<VarKey> {
       if (ctx.get(key) == null) {
         throw new IllegalArgumentException("No context mapping found for variable: " + key);
       }
-      return new ScalarValue<>(ctx.get(key), gradient, ctx);
+      return new ScalarValue<>(ctx.get(key), gradient);
     };
   }
 

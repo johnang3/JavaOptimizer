@@ -6,6 +6,7 @@ public class VectorTest {
 
   @Test
   public void testSoftmax() {
+    ArrayVectorValue.Builder<String> b = new ArrayVectorValue.Builder<>(3);
 
   }
 

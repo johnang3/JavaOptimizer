@@ -2,7 +2,7 @@ package angland.optimizer.var;
 
 
 
-abstract class MatrixBase<VarType> {
+abstract class MatrixBase<X> {
 
   private final int height;
   private final int width;
@@ -17,7 +17,7 @@ abstract class MatrixBase<VarType> {
    * 
    * @return
    */
-  protected abstract ScalarValue<VarType>[] values();
+  protected abstract X[] values();
 
   public int getHeight() {
     return height;
@@ -27,7 +27,7 @@ abstract class MatrixBase<VarType> {
     return width;
   }
 
-  public ScalarValue<VarType> getCalculation(int row, int column) {
+  public X get(int row, int column) {
     validateCoords(row, column);
     return values()[column + getWidth() * row];
   }

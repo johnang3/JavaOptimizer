@@ -3,20 +3,16 @@ package angland.optimizer.var;
 import java.util.Map;
 
 
-public class ArrayMatrixValue<VarKey> extends MatrixBase<VarKey> implements IMatrixValue<VarKey> {
+public class ArrayMatrixValue<VarKey> extends MatrixBase<ScalarValue<VarKey>>
+    implements
+      IMatrixValue<VarKey> {
 
   private final ScalarValue<VarKey>[] values;
-  private final Map<IndexedKey<VarKey>, Double> context;
 
-  public Map<IndexedKey<VarKey>, Double> getContext() {
-    return context;
-  }
 
-  protected ArrayMatrixValue(int height, int width, ScalarValue<VarKey>[] values,
-      Map<IndexedKey<VarKey>, Double> context) {
+  protected ArrayMatrixValue(int height, int width, ScalarValue<VarKey>[] values) {
     super(height, width);
     this.values = values;
-    this.context = context;
   }
 
   @Override
@@ -34,10 +30,10 @@ public class ArrayMatrixValue<VarKey> extends MatrixBase<VarKey> implements IMat
     Builder<VarKey> newMatrix = new Builder<>(getHeight(), getWidth());
     for (int i = 0; i < getHeight(); ++i) {
       for (int j = 0; j < getHeight(); ++j) {
-        newMatrix.set(i, j, this.getCalculation(i, j).plus(other.getCalculation(i, j)));
+        newMatrix.set(i, j, this.get(i, j).plus(other.get(i, j)));
       }
     }
-    return newMatrix.build(other.getContext());
+    return newMatrix.build();
   }
 
   public static <VarKey> ArrayMatrixValue<VarKey> times(ScalarValue<VarKey> scalar,
@@ -45,13 +41,13 @@ public class ArrayMatrixValue<VarKey> extends MatrixBase<VarKey> implements IMat
     Builder<VarKey> newMatrix = new Builder<>(matrix.getHeight(), matrix.getWidth());
     for (int i = 0; i < matrix.getHeight(); ++i) {
       for (int j = 0; j < matrix.getHeight(); ++j) {
-        newMatrix.set(i, j, matrix.getCalculation(i, j).times(scalar));
+        newMatrix.set(i, j, matrix.get(i, j).times(scalar));
       }
     }
-    return newMatrix.build(scalar.getContext());
+    return newMatrix.build();
   }
 
-  public static class Builder<VarKey> extends MatrixBase<VarKey> {
+  public static class Builder<VarKey> extends MatrixBase<ScalarValue<VarKey>> {
 
     protected final ScalarValue<VarKey>[] values;
 
@@ -71,10 +67,16 @@ public class ArrayMatrixValue<VarKey> extends MatrixBase<VarKey> implements IMat
       values()[column + getWidth() * row] = calc;
     }
 
-    public ArrayMatrixValue<VarKey> build(Map<IndexedKey<VarKey>, Double> context) {
-      return new ArrayMatrixValue<>(getHeight(), getWidth(), values, context);
+    public ArrayMatrixValue<VarKey> build() {
+      return new ArrayMatrixValue<>(getHeight(), getWidth(), values);
     }
 
+  }
+
+  @Override
+  public Map<IndexedKey<VarKey>, Double> getContext() {
+    // TODO Auto-generated method stub
+    return null;
   }
 
 

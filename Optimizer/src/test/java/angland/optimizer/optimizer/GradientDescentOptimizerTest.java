@@ -8,9 +8,8 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import angland.optimizer.var.ScalarValue;
-import angland.optimizer.var.ScalarExpression;
 import angland.optimizer.var.IndexedKey;
+import angland.optimizer.var.ScalarExpression;
 
 public class GradientDescentOptimizerTest {
 
@@ -24,10 +23,10 @@ public class GradientDescentOptimizerTest {
     Map<IndexedKey<String>, Double> startingPoint = new HashMap<>();
     startingPoint.put(IndexedKey.scalarKey("a"), 200.0);
     startingPoint.put(IndexedKey.scalarKey("b"), 200.0);
-    ScalarValue<String> solution =
+    Solution<String> solution =
         GradientDescentOptimizer.stepToMinimum(objectiveFunction, startingPoint, new HashMap<>(),
             10000, 10e-6);
-    assertEquals(0.0, solution.value(), TOLERANCE);
+    assertEquals(0.0, solution.getResult().value(), TOLERANCE);
     assertEquals(0.0, solution.getContext().get(IndexedKey.scalarKey("a")), TOLERANCE);
     assertEquals(0.0, solution.getContext().get(IndexedKey.scalarKey("b")), TOLERANCE);
   }

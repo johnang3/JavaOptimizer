@@ -39,10 +39,10 @@ public class MatrixTest {
     IMatrixValue<String> product = leftMatrix.times(rightMatrix).evaluate(context);
     assertEquals(2, product.getHeight());
     assertEquals(2, product.getWidth());
-    assertEquals(22.0, product.getCalculation(0, 0).value(), TOLERANCE);
-    assertEquals(28.0, product.getCalculation(0, 1).value(), TOLERANCE);
-    assertEquals(49.0, product.getCalculation(1, 0).value(), TOLERANCE);
-    assertEquals(64.0, product.getCalculation(1, 1).value(), TOLERANCE);
+    assertEquals(22.0, product.get(0, 0).value(), TOLERANCE);
+    assertEquals(28.0, product.get(0, 1).value(), TOLERANCE);
+    assertEquals(49.0, product.get(1, 0).value(), TOLERANCE);
+    assertEquals(64.0, product.get(1, 1).value(), TOLERANCE);
   }
 
   @Test
@@ -56,10 +56,10 @@ public class MatrixTest {
     IMatrixValue<String> sum = leftMatrix.plus(leftMatrix).evaluate(context);
     assertEquals(2, sum.getHeight());
     assertEquals(2, sum.getWidth());
-    assertEquals(2, sum.getCalculation(0, 0).value(), TOLERANCE);
-    assertEquals(4, sum.getCalculation(0, 1).value(), TOLERANCE);
-    assertEquals(8, sum.getCalculation(1, 0).value(), TOLERANCE);
-    assertEquals(10, sum.getCalculation(1, 1).value(), TOLERANCE);
+    assertEquals(2, sum.get(0, 0).value(), TOLERANCE);
+    assertEquals(4, sum.get(0, 1).value(), TOLERANCE);
+    assertEquals(8, sum.get(1, 0).value(), TOLERANCE);
+    assertEquals(10, sum.get(1, 1).value(), TOLERANCE);
   }
 
   @Test
@@ -74,10 +74,10 @@ public class MatrixTest {
     IMatrixValue<String> product = scalar.times(matrix).evaluate(context);
     assertEquals(2, product.getHeight());
     assertEquals(2, product.getWidth());
-    assertEquals(3, product.getCalculation(0, 0).value(), TOLERANCE);
-    assertEquals(6, product.getCalculation(0, 1).value(), TOLERANCE);
-    assertEquals(12, product.getCalculation(1, 0).value(), TOLERANCE);
-    assertEquals(15, product.getCalculation(1, 1).value(), TOLERANCE);
+    assertEquals(3, product.get(0, 0).value(), TOLERANCE);
+    assertEquals(6, product.get(0, 1).value(), TOLERANCE);
+    assertEquals(12, product.get(1, 0).value(), TOLERANCE);
+    assertEquals(15, product.get(1, 1).value(), TOLERANCE);
   }
 
   @Test
@@ -93,12 +93,12 @@ public class MatrixTest {
     IMatrixValue<String> transpose = matrix.transpose().evaluate(context);
     assertEquals(3, transpose.getHeight());
     assertEquals(2, transpose.getWidth());
-    assertEquals(1, transpose.getCalculation(0, 0).value(), TOLERANCE);
-    assertEquals(4, transpose.getCalculation(0, 1).value(), TOLERANCE);
-    assertEquals(2, transpose.getCalculation(1, 0).value(), TOLERANCE);
-    assertEquals(5, transpose.getCalculation(1, 1).value(), TOLERANCE);
-    assertEquals(3, transpose.getCalculation(2, 0).value(), TOLERANCE);
-    assertEquals(6, transpose.getCalculation(2, 1).value(), TOLERANCE);
+    assertEquals(1, transpose.get(0, 0).value(), TOLERANCE);
+    assertEquals(4, transpose.get(0, 1).value(), TOLERANCE);
+    assertEquals(2, transpose.get(1, 0).value(), TOLERANCE);
+    assertEquals(5, transpose.get(1, 1).value(), TOLERANCE);
+    assertEquals(3, transpose.get(2, 0).value(), TOLERANCE);
+    assertEquals(6, transpose.get(2, 1).value(), TOLERANCE);
   }
 
   @Ignore
@@ -123,6 +123,7 @@ public class MatrixTest {
     System.out.println("Matrix times matrix time millis = " + (end - start));
   }
 
+  @Ignore
   @Test
   public void vectorTimeMatrixPerformanceTest() {
     int size = 1000;

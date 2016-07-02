@@ -16,14 +16,11 @@ public class ScalarValue<VarKey> {
 
   private final double value;
   private final Map<IndexedKey<VarKey>, Double> gradient;
-  private final Map<IndexedKey<VarKey>, Double> context;
 
-  ScalarValue(double value, Map<IndexedKey<VarKey>, Double> gradient,
-      Map<IndexedKey<VarKey>, Double> context) {
+  ScalarValue(double value, Map<IndexedKey<VarKey>, Double> gradient) {
     super();
     this.value = value;
     this.gradient = Collections.unmodifiableMap(gradient);
-    this.context = Collections.unmodifiableMap(context);
   }
 
   public double value() {
@@ -41,7 +38,7 @@ public class ScalarValue<VarKey> {
   public ScalarValue<VarKey> plus(ScalarValue<VarKey> other) {
     double newVal = value + other.value();
     Map<IndexedKey<VarKey>, Double> newGrad = MathUtils.add(gradient, other.gradient);
-    return new ScalarValue<>(newVal, newGrad, context);
+    return new ScalarValue<>(newVal, newGrad);
   }
 
   public ScalarValue<VarKey> divide(ScalarValue<VarKey> other) {
@@ -59,7 +56,7 @@ public class ScalarValue<VarKey> {
     for (Map.Entry<IndexedKey<VarKey>, Double> e : gradient.entrySet()) {
       newGrad.put(e.getKey(), Math.exp(e.getValue()));
     }
-    return new ScalarValue<>(newVal, newGrad, context);
+    return new ScalarValue<>(newVal, newGrad);
   }
 
   @SuppressWarnings("unchecked")
@@ -75,7 +72,7 @@ public class ScalarValue<VarKey> {
       newVal += calc.value();
       calc.getGradient().entrySet().forEach(accumulator);
     }
-    return new ScalarValue<>(newVal, newGrad, args[0].context);
+    return new ScalarValue<>(newVal, newGrad);
   }
 
   public static class Builder<VarKey> {
@@ -107,8 +104,8 @@ public class ScalarValue<VarKey> {
       return gradient;
     }
 
-    public ScalarValue<VarKey> build(Map<IndexedKey<VarKey>, Double> context) {
-      return new ScalarValue<>(value, gradient, context);
+    public ScalarValue<VarKey> build() {
+      return new ScalarValue<>(value, gradient);
     }
 
   }
@@ -125,14 +122,33 @@ public class ScalarValue<VarKey> {
       if (entry.getValue() == 0) continue;
       newGrad.merge(entry.getKey(), entry.getValue() * this.value(), Double::sum);
     }
-    return new ScalarValue<>(newVal, newGrad, context);
+    return new ScalarValue<>(newVal, newGrad);
   }
 
   public ScalarValue<VarKey> power(double exponent) {
     double newVal = Math.pow(value, exponent);
     Map<IndexedKey<VarKey>, Double> newGradient = new HashMap<>(gradient.size(), 1);
     gradient.forEach((k, v) -> newGradient.put(k, exponent * Math.pow(value, exponent - 1)));
-    return new ScalarValue<>(newVal, newGradient, context);
+    return new ScalarValue<>(newVal, newGradient);
+  }
+
+  public ScalarValue<VarKey> sigmoid() {
+    double newVal = sigmoidVal(value);
+    Map<IndexedKey<VarKey>, Double> newGradient = new HashMap<>(gradient.size(), 1);
+    gradient.forEach((k, v) -> newGradient.put(k, sigmoidVal(v) * (1 - sigmoidVal(v))));
+    return new ScalarValue<>(newVal, newGradient);
+  }
+
+  public ScalarValue<VarKey> tanh() {
+    double newVal = Math.tanh(value);
+    Map<IndexedKey<VarKey>, Double> newGradient = new HashMap<>(gradient.size(), 1);
+    gradient.forEach((k, v) -> newGradient.put(k, 1 - Math.pow(Math.tanh(v), 2)));
+    return new ScalarValue<>(newVal, newGradient);
+  }
+
+
+  private double sigmoidVal(double x) {
+    return 1.0 / (1 + Math.exp(-x));
   }
 
   public ArrayMatrixValue<VarKey> times(IMatrixValue<VarKey> matrix) {
@@ -141,10 +157,6 @@ public class ScalarValue<VarKey> {
 
   public String toString() {
     return "Calculation(" + value + " " + gradient.toString() + ")";
-  }
-
-  public Map<IndexedKey<VarKey>, Double> getContext() {
-    return context;
   }
 
 

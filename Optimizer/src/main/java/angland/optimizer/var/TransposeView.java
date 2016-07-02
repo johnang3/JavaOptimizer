@@ -22,8 +22,8 @@ public class TransposeView<VarKey> implements IMatrixValue<VarKey> {
   }
 
   @Override
-  public ScalarValue<VarKey> getCalculation(int row, int column) {
-    return source.getCalculation(column, row);
+  public ScalarValue<VarKey> get(int row, int column) {
+    return source.get(column, row);
   }
 
   @Override

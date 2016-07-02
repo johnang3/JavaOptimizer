@@ -17,7 +17,7 @@ public interface IVectorValue<VarKey> extends IMatrixValue<VarKey> {
   }
 
   public default ScalarValue<VarKey> getCalculation(int idx) {
-    return getCalculation(idx, 0);
+    return get(idx, 0);
   }
 
   public default ArrayVectorValue<VarKey> add(IMatrixValue<VarKey> other) {
@@ -29,9 +29,9 @@ public interface IVectorValue<VarKey> extends IMatrixValue<VarKey> {
     }
     Builder<VarKey> builder = new Builder<>(getLength());
     for (int i = 0; i < getLength(); ++i) {
-      builder.set(i, this.getCalculation(i).plus(other.getCalculation(i, 0)));
+      builder.set(i, this.getCalculation(i).plus(other.get(i, 0)));
     }
-    return builder.build(getContext());
+    return builder.build();
   }
 
   public default ArrayVectorValue<VarKey> softmax() {
@@ -43,12 +43,12 @@ public interface IVectorValue<VarKey> extends IMatrixValue<VarKey> {
     for (ScalarValue<VarKey> calc : exp) {
       sumBuilder.increment(calc);
     }
-    ScalarValue<VarKey> sum = sumBuilder.build(getContext());
+    ScalarValue<VarKey> sum = sumBuilder.build();
     Builder<VarKey> resultBuilder = new Builder<>(getLength());
     for (int i = 0; i < exp.size(); ++i) {
       resultBuilder.set(i, exp.get(i).divide(sum));
     }
-    return resultBuilder.build(getContext());
+    return resultBuilder.build();
   }
 
 }

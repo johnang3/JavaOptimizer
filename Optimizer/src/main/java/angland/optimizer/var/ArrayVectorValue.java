@@ -1,17 +1,17 @@
 package angland.optimizer.var;
 
-import java.util.Map;
 
 
-public class ArrayVectorValue<VarKey> extends ArrayMatrixValue<VarKey> implements IVectorValue<VarKey> {
+public class ArrayVectorValue<VarKey> extends ArrayMatrixValue<VarKey>
+    implements
+      IVectorValue<VarKey> {
 
-  public ArrayVectorValue(int length, ScalarValue<VarKey>[] values,
-      Map<IndexedKey<VarKey>, Double> context) {
-    super(length, 1, values, context);
+  public ArrayVectorValue(int length, ScalarValue<VarKey>[] values) {
+    super(length, 1, values);
   }
 
   public ScalarValue<VarKey> get(int idx) {
-    return getCalculation(idx, 1);
+    return get(idx, 1);
   }
 
   public int getLength() {
@@ -26,7 +26,7 @@ public class ArrayVectorValue<VarKey> extends ArrayMatrixValue<VarKey> implement
     }
 
     public ScalarValue<VarKey> get(int idx) {
-      return getCalculation(idx, 1);
+      return get(idx, 1);
     }
 
     public int getLength() {
@@ -37,8 +37,8 @@ public class ArrayVectorValue<VarKey> extends ArrayMatrixValue<VarKey> implement
       set(idx, 1, calc);
     }
 
-    public ArrayVectorValue<VarKey> build(Map<IndexedKey<VarKey>, Double> context) {
-      return new ArrayVectorValue<>(getLength(), values, context);
+    public ArrayVectorValue<VarKey> build() {
+      return new ArrayVectorValue<>(getLength(), values);
     }
   }
 

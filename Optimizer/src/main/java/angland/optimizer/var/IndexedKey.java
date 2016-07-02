@@ -33,7 +33,7 @@ public class IndexedKey<VarKey> {
     return varKeys;
   }
 
-  private IndexedKey(VarKey varKey, List<Integer> indices) {
+  public IndexedKey(VarKey varKey, List<Integer> indices) {
     super();
     this.varKey = varKey;
     this.indices = indices;
@@ -52,7 +52,7 @@ public class IndexedKey<VarKey> {
     return varKey;
   }
 
-  public List<Integer> indices() {
+  public List<Integer> getIndices() {
     return indices;
   }
 

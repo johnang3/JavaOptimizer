@@ -3,9 +3,9 @@ package angland.optimizer.optimizer;
 import java.util.HashMap;
 import java.util.Map;
 
-import angland.optimizer.var.ScalarValue;
-import angland.optimizer.var.ScalarExpression;
 import angland.optimizer.var.IndexedKey;
+import angland.optimizer.var.ScalarExpression;
+import angland.optimizer.var.ScalarValue;
 
 
 public class GradientDescentOptimizer {
@@ -18,12 +18,13 @@ public class GradientDescentOptimizer {
    * @return
    */
   public static <VarType> Map<IndexedKey<VarType>, Double> step(ScalarValue<VarType> calculation,
-      Map<VarType, Range> variableRanges, double gradientMultiplier) {
+      Map<IndexedKey<VarType>, Double> context, Map<VarType, Range> variableRanges,
+      double gradientMultiplier) {
     if (gradientMultiplier <= 0) {
       throw new RuntimeException("MaxStepDistance must be greater than 0.");
     }
     Map<IndexedKey<VarType>, Double> result = new HashMap<>();
-    for (Map.Entry<IndexedKey<VarType>, Double> contextEntry : calculation.getContext().entrySet()) {
+    for (Map.Entry<IndexedKey<VarType>, Double> contextEntry : context.entrySet()) {
       double stepped =
           contextEntry.getValue() - calculation.getGradient().get(contextEntry.getKey())
               * gradientMultiplier;
@@ -40,17 +41,22 @@ public class GradientDescentOptimizer {
     return result;
   }
 
-  public static <VarType> ScalarValue<VarType> stepToMinimum(ScalarExpression<VarType> expression,
+  public static <VarType> Solution<VarType> stepToMinimum(ScalarExpression<VarType> expression,
       Map<IndexedKey<VarType>, Double> initialContext, Map<VarType, Range> variableRanges,
       double step, double minStep) {
+    Map<IndexedKey<VarType>, Double> bestContext = initialContext;
     ScalarValue<VarType> best = expression.evaluate(initialContext);
     while (step > minStep) {
       ScalarValue<VarType> next = null;
-      while ((next = expression.evaluate(step(best, variableRanges, step))).value() < best.value()) {
+      Map<IndexedKey<VarType>, Double> nextContext = null;
+      while ((next =
+          expression.evaluate((nextContext = step(best, bestContext, variableRanges, step))))
+          .value() < best.value()) {
         best = next;
+        bestContext = nextContext;
       }
       step /= 2;
     }
-    return best;
+    return new Solution<>(bestContext, best);
   }
 }
