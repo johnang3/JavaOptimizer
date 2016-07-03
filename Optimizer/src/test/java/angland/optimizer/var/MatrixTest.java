@@ -179,4 +179,38 @@ public class MatrixTest {
     System.out.println("Vector times matrix time millis = " + (end - start));
   }
 
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void testIntermediateValuesRetained() {
+    MatrixExpression<String> a = MatrixExpression.variable("a", 1, 1);
+    MatrixExpression<String> b = MatrixExpression.variable("b", 1, 1);
+    MatrixExpression<String> c = a.times(b);
+    MatrixExpression<String> d = b.times(c);
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    context.put(IndexedKey.matrixKey("a", 0, 0), 2.0);
+    context.put(IndexedKey.matrixKey("b", 0, 0), 2.0);
+    Map<Object, Object> partialSolutions = new HashMap<>();
+    d.evaluateAndCache(context, partialSolutions);
+    assertEquals(8.0, ((IMatrixValue<String>) partialSolutions.get(d)).get(0, 0).value(), TOLERANCE);
+    assertEquals(4.0, ((IMatrixValue<String>) partialSolutions.get(c)).get(0, 0).value(), TOLERANCE);
+    assertEquals(2.0, ((IMatrixValue<String>) partialSolutions.get(b)).get(0, 0).value(), TOLERANCE);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void testIntermediateValuesRetainedPointWiseMultiply() {
+    MatrixExpression<String> a = MatrixExpression.variable("a", 1, 1);
+    MatrixExpression<String> b = MatrixExpression.variable("b", 1, 1);
+    MatrixExpression<String> c = a.pointwiseMultiply(b);
+    MatrixExpression<String> d = b.pointwiseMultiply(c);
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    context.put(IndexedKey.matrixKey("a", 0, 0), 2.0);
+    context.put(IndexedKey.matrixKey("b", 0, 0), 2.0);
+    Map<Object, Object> partialSolutions = new HashMap<>();
+    d.evaluateAndCache(context, partialSolutions);
+    assertEquals(8.0, ((IMatrixValue<String>) partialSolutions.get(d)).get(0, 0).value(), TOLERANCE);
+    assertEquals(4.0, ((IMatrixValue<String>) partialSolutions.get(c)).get(0, 0).value(), TOLERANCE);
+    assertEquals(2.0, ((IMatrixValue<String>) partialSolutions.get(b)).get(0, 0).value(), TOLERANCE);
+  }
 }

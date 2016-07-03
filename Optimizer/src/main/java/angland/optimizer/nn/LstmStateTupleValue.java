@@ -13,7 +13,7 @@ public class LstmStateTupleValue<VarKey> {
     this.exposedState = exposedState;
   }
 
-  public IMatrixValue<VarKey> getHiddenValue() {
+  public IMatrixValue<VarKey> getHiddenState() {
     return hiddenValue;
   }
 

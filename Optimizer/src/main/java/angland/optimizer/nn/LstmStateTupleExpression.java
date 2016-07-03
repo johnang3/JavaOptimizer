@@ -29,12 +29,9 @@ public class LstmStateTupleExpression<VarKey> {
 
   @SuppressWarnings("unchecked")
   public LstmStateTupleValue<VarKey> evaluate(Map<IndexedKey<VarKey>, Double> context) {
-    Map<Object, Object> solutionMap = new HashMap<>();
-    IMatrixValue<VarKey> exposedSolution = exposedState.evaluateAndCache(context, solutionMap);
-    IMatrixValue<VarKey> hiddenSolution = (IMatrixValue<VarKey>) solutionMap.get(hiddenState);
+    Map<Object, Object> partialSolutions = new HashMap<>();
+    IMatrixValue<VarKey> exposedSolution = exposedState.evaluate(context, partialSolutions);
+    IMatrixValue<VarKey> hiddenSolution = (IMatrixValue<VarKey>) partialSolutions.get(hiddenState);
     return new LstmStateTupleValue<>(hiddenSolution, exposedSolution);
   }
-
-
-
 }

@@ -98,4 +98,21 @@ public class CalculationTest {
     assertEquals(8.0, result.value(), TOLERANCE);
     assertEquals(12.0, result.d(IndexedKey.scalarKey("a")), TOLERANCE);
   }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void testIntermediateValuesRetained() {
+    ScalarExpression<String> a = var("a");
+    ScalarExpression<String> b = a.times(ScalarExpression.constant(2.0));
+    ScalarExpression<String> c = b.times(ScalarExpression.constant(2.0));
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    context.put(IndexedKey.scalarKey("a"), 2.0);
+    Map<Object, Object> partialSolutions = new HashMap<>();
+    c.evaluateAndCache(context, partialSolutions);
+    assertEquals(8.0, ((ScalarValue<String>) partialSolutions.get(c)).value(), TOLERANCE);
+    assertEquals(4.0, ((ScalarValue<String>) partialSolutions.get(b)).value(), TOLERANCE);
+    assertEquals(2.0, ((ScalarValue<String>) partialSolutions.get(a)).value(), TOLERANCE);
+
+  }
+
 }
