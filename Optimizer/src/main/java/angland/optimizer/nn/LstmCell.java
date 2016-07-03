@@ -1,5 +1,8 @@
 package angland.optimizer.nn;
 
+import java.util.stream.Stream;
+
+import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.MatrixExpression;
 import angland.optimizer.var.ScalarExpression;
 import angland.optimizer.var.ScalarValue;
@@ -11,7 +14,7 @@ public class LstmCell {
 
   private static final ScalarExpression<String> one = ScalarExpression.constant(1);
   private static final ScalarExpression<String> minusOne = ScalarExpression.constant(1);
-  private int size;
+  private final int size;
   private FeedForwardLayer<String> modify;
   private FeedForwardLayer<String> select;
 
@@ -25,9 +28,10 @@ public class LstmCell {
     this.select =
         new FeedForwardLayer<>(size, size, ScalarValue::sigmoid, varPrefix + "_retain_w", varPrefix
             + "_retain_b");
+    this.size = size;
   }
 
-  public LstmStateTuple<String> apply(LstmStateTuple<String> input) {
+  public LstmStateTupleExpression<String> apply(LstmStateTupleExpression<String> input) {
 
     MatrixExpression<String> retainHidden = retain.apply(input.getExposedState());
 
@@ -44,11 +48,17 @@ public class LstmCell {
 
     MatrixExpression<String> cellOutput = selector.pointwiseMultiply(hiddenModified);
 
-    return new LstmStateTuple<>(hiddenModified, cellOutput);
+    return new LstmStateTupleExpression<>(hiddenModified, cellOutput);
   }
 
   public int getSize() {
     return size;
   }
+
+  public Stream<IndexedKey<String>> getKeys() {
+    return Stream.concat(modify.getVarKeys(),
+        Stream.concat(select.getVarKeys(), retain.getVarKeys()));
+  }
+
 
 }

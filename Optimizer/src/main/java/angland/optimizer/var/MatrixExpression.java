@@ -60,6 +60,38 @@ public interface MatrixExpression<VarKey> {
     };
   }
 
+  public default MatrixExpression<VarKey> getColumn(ScalarExpression<VarKey> colIdx) {
+    return (ctx, cache) -> {
+      int col = (int) colIdx.evaluateAndCache(ctx, cache).value();
+      IMatrixValue<VarKey> solved = this.evaluateAndCache(ctx, cache);
+      return new MatrixRangeView<>(solved, 0, col, solved.getHeight(), 1);
+    };
+  }
+
+  /**
+   * Returns a new matrix m of dimensions (0, this.getWidth()).
+   * 
+   * Each entry m[0][i] is equal to the l2 norm of the i'th column of this matrix minus target.
+   * 
+   * @param target
+   * @return
+   */
+  public default MatrixExpression<VarKey> columnProximity(MatrixExpression<VarKey> target) {
+    return (ctx, cache) -> {
+      IMatrixValue<VarKey> solved = this.evaluateAndCache(ctx, cache);
+      ArrayMatrixValue.Builder<VarKey> builder =
+          new ArrayMatrixValue.Builder<>(1, solved.getWidth());
+      for (int i = 0; i < solved.getWidth(); ++i) {
+        ScalarValue.Builder<VarKey> columnBuilder = new ScalarValue.Builder<>(1);
+        for (int j = 0; j < solved.getHeight(); ++j) {
+          columnBuilder.increment(solved.get(j, i).power(2));
+        }
+        builder.set(0, i, columnBuilder.build().power(.5));
+      }
+      return builder.build();
+    };
+  }
+
   public default MatrixExpression<VarKey> plus(MatrixExpression<VarKey> other) {
     return (ctx, cache) -> this.evaluateAndCache(ctx, cache)
         .add(other.evaluateAndCache(ctx, cache));
@@ -106,6 +138,18 @@ public interface MatrixExpression<VarKey> {
         }
       }
       return builder.build();
+    };
+  }
+
+  public default MatrixExpression<VarKey> softmax() {
+    return (ctx, cache) -> {
+      return this.evaluateAndCache(ctx, cache).softmax();
+    };
+  }
+
+  public default ScalarExpression<VarKey> maxIdx() {
+    return (ctx, cache) -> {
+      return this.evaluateAndCache(ctx, cache).maxIdx();
     };
   }
 

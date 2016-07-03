@@ -1,6 +1,7 @@
 package angland.optimizer.var;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -26,7 +27,7 @@ public interface IMatrixValue<VarKey> {
     }
     Builder<VarKey> newMatrix = new Builder<>(getHeight(), getWidth());
     for (int i = 0; i < getHeight(); ++i) {
-      for (int j = 0; j < getHeight(); ++j) {
+      for (int j = 0; j < getWidth(); ++j) {
         newMatrix.set(i, j, this.get(i, j).plus(other.get(i, j)));
       }
     }
@@ -43,7 +44,7 @@ public interface IMatrixValue<VarKey> {
     }
     Builder<VarKey> newMatrix = new Builder<>(getHeight(), getWidth());
     for (int i = 0; i < getHeight(); ++i) {
-      for (int j = 0; j < getHeight(); ++j) {
+      for (int j = 0; j < getWidth(); ++j) {
         newMatrix.set(i, j, this.get(i, j).times(other.get(i, j)));
       }
     }
@@ -109,6 +110,22 @@ public interface IMatrixValue<VarKey> {
     return resultBuilder.build();
   }
 
+  public default ScalarValue<VarKey> maxIdx() {
+    if (this.getWidth() != 1) {
+      throw new RuntimeException("getMaxRowValue may only be used on 1-width matrices.");
+    }
+    double maxVal = get(0, 0).value();
+    int maxIdx = 0;
+    for (int i = 1; i < getHeight(); ++i) {
+      double current = get(i, 0).value();
+      if (get(i, 0).value() > maxVal) {
+        maxVal = current;
+        maxIdx = i;
+      }
+    }
+    return new ScalarValue<>(maxIdx, new HashMap<>());
+  }
+
   public default IMatrixValue<VarKey> transform(
       Function<ScalarValue<VarKey>, ScalarValue<VarKey>> transform) {
     ArrayMatrixValue.Builder<VarKey> builder =
@@ -121,4 +138,17 @@ public interface IMatrixValue<VarKey> {
     return builder.build();
   }
 
+  public default MatrixExpression<VarKey> toConstant() {
+    return (ctx, cache) -> {
+      ArrayMatrixValue.Builder<VarKey> builder =
+          new ArrayMatrixValue.Builder<>(getHeight(), getWidth());
+      for (int i = 0; i < getHeight(); ++i) {
+        for (int j = 0; j < getWidth(); ++j) {
+          ScalarExpression<VarKey> c = ScalarExpression.constant(this.get(i, j).value());
+          builder.set(i, j, c.evaluate(ctx));
+        }
+      }
+      return builder.build();
+    };
+  }
 }

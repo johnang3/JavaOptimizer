@@ -27,7 +27,7 @@ public class IndexedKey<VarKey> {
     List<IndexedKey<VarKey>> varKeys = new ArrayList<>(height * width);
     for (int i = 0; i < height; ++i) {
       for (int j = 0; j < width; ++j) {
-        varKeys.add(matrixKey(varKey, height, width));
+        varKeys.add(matrixKey(varKey, i, j));
       }
     }
     return varKeys;
@@ -75,6 +75,10 @@ public class IndexedKey<VarKey> {
       if (other.varKey != null) return false;
     } else if (!varKey.equals(other.varKey)) return false;
     return true;
+  }
+
+  public String toString() {
+    return "(" + varKey + " " + indices + ")";
   }
 
 

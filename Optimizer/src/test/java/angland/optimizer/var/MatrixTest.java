@@ -101,6 +101,36 @@ public class MatrixTest {
     assertEquals(6, transpose.get(2, 1).value(), TOLERANCE);
   }
 
+  @Test
+  public void testColumnProximity() {
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    MatrixExpression<String> a = MatrixExpression.variable("a", 2, 2);
+    context.put(IndexedKey.matrixKey("a", 0, 0), 3.0);
+    context.put(IndexedKey.matrixKey("a", 0, 1), 6.0);
+    context.put(IndexedKey.matrixKey("a", 1, 0), 4.0);
+    context.put(IndexedKey.matrixKey("a", 1, 1), -8.0);
+    MatrixExpression<String> b = MatrixExpression.variable("b", 2, 1);
+    context.put(IndexedKey.matrixKey("b", 0, 0), 0.0);
+    context.put(IndexedKey.matrixKey("b", 1, 0), 0.0);
+    MatrixExpression<String> norm = a.columnProximity(b);
+    IMatrixValue<String> matrixVal = norm.evaluate(context);
+    assertEquals(matrixVal.getHeight(), 1);
+    assertEquals(matrixVal.getWidth(), 2);
+    assertEquals(matrixVal.get(0, 0).value(), 5.0, TOLERANCE);
+    assertEquals(matrixVal.get(0, 1).value(), 10.0, TOLERANCE);
+  }
+
+  @Test
+  public void testMaxIdx() {
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    MatrixExpression<String> a = MatrixExpression.variable("a", 3, 1);
+    context.put(IndexedKey.matrixKey("a", 0, 0), 3.0);
+    context.put(IndexedKey.matrixKey("a", 1, 0), 6.0);
+    context.put(IndexedKey.matrixKey("a", 2, 0), 4.0);
+    ScalarExpression<String> maxIdx = a.maxIdx();
+    assertEquals(1, maxIdx.evaluate(context).value(), TOLERANCE);
+  }
+
   @Ignore
   @Test
   public void largeMatrixPerformanceTest() {

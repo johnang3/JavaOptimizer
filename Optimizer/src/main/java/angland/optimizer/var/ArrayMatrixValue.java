@@ -40,7 +40,7 @@ public class ArrayMatrixValue<VarKey> extends MatrixBase<ScalarValue<VarKey>>
       IMatrixValue<VarKey> matrix) {
     Builder<VarKey> newMatrix = new Builder<>(matrix.getHeight(), matrix.getWidth());
     for (int i = 0; i < matrix.getHeight(); ++i) {
-      for (int j = 0; j < matrix.getHeight(); ++j) {
+      for (int j = 0; j < matrix.getWidth(); ++j) {
         newMatrix.set(i, j, matrix.get(i, j).times(scalar));
       }
     }
