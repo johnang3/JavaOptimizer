@@ -1,6 +1,5 @@
 package angland.optimizer.var;
 
-import java.util.Map;
 
 
 public class ArrayMatrixValue<VarKey> extends MatrixBase<ScalarValue<VarKey>>
@@ -71,12 +70,6 @@ public class ArrayMatrixValue<VarKey> extends MatrixBase<ScalarValue<VarKey>>
       return new ArrayMatrixValue<>(getHeight(), getWidth(), values);
     }
 
-  }
-
-  @Override
-  public Map<IndexedKey<VarKey>, Double> getContext() {
-    // TODO Auto-generated method stub
-    return null;
   }
 
 

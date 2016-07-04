@@ -1,6 +1,5 @@
 package angland.optimizer.var;
 
-import java.util.Map;
 
 public class MatrixRangeView<VarKey> implements IMatrixValue<VarKey> {
 
@@ -35,9 +34,6 @@ public class MatrixRangeView<VarKey> implements IMatrixValue<VarKey> {
     return source.get(startRow + row, startCol + column);
   }
 
-  @Override
-  public Map<IndexedKey<VarKey>, Double> getContext() {
-    return source.getContext();
-  }
+
 
 }

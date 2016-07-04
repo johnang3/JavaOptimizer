@@ -2,9 +2,9 @@ package angland.optimizer.optimizer;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import angland.optimizer.var.IndexedKey;
-import angland.optimizer.var.ScalarExpression;
 import angland.optimizer.var.ScalarValue;
 
 
@@ -17,9 +17,9 @@ public class GradientDescentOptimizer {
    * 
    * @return
    */
-  public static <VarType> Map<IndexedKey<VarType>, Double> step(ScalarValue<VarType> calculation,
-      Map<IndexedKey<VarType>, Double> context, Map<VarType, Range> variableRanges,
-      double gradientMultiplier) {
+  public static <Result, VarType> Map<IndexedKey<VarType>, Double> step(
+      ScalarValue<VarType> calculation, Map<IndexedKey<VarType>, Double> context,
+      Map<VarType, Range> variableRanges, double gradientMultiplier) {
     if (gradientMultiplier <= 0) {
       throw new RuntimeException("MaxStepDistance must be greater than 0.");
     }
@@ -41,22 +41,22 @@ public class GradientDescentOptimizer {
     return result;
   }
 
-  public static <VarType> Solution<VarType> stepToMinimum(ScalarExpression<VarType> expression,
-      Map<IndexedKey<VarType>, Double> initialContext, Map<VarType, Range> variableRanges,
-      double step, double minStep) {
-    Map<IndexedKey<VarType>, Double> bestContext = initialContext;
-    ScalarValue<VarType> best = expression.evaluate(initialContext);
+
+  public static <Result, VarKey> Solution<Result, VarKey> stepToMinimum(
+      Function<Map<IndexedKey<VarKey>, Double>, Result> getResult,
+      Function<Result, ScalarValue<VarKey>> getObjective, Map<VarKey, Range> variableRanges,
+      Map<IndexedKey<VarKey>, Double> initialContext, double step, double minStep) {
+    Solution<Result, VarKey> bestResult = new Solution<>(initialContext, getResult, getObjective);
     while (step > minStep) {
-      ScalarValue<VarType> next = null;
-      Map<IndexedKey<VarType>, Double> nextContext = null;
+      Solution<Result, VarKey> next = null;
       while ((next =
-          expression.evaluate((nextContext = step(best, bestContext, variableRanges, step))))
-          .value() < best.value()) {
-        best = next;
-        bestContext = nextContext;
+          new Solution<>(step(bestResult.getObjective(), bestResult.getContext(), variableRanges,
+              step), getResult, getObjective)).getObjective().value() < bestResult.getObjective()
+          .value()) {
+        bestResult = next;
       }
       step /= 2;
     }
-    return new Solution<>(bestContext, best);
+    return bestResult;
   }
 }

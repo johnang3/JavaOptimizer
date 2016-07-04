@@ -1,10 +1,10 @@
 package angland.optimizer.nn;
 
+import java.util.Map;
 import java.util.stream.Stream;
 
+import angland.optimizer.var.IMatrixValue;
 import angland.optimizer.var.IndexedKey;
-import angland.optimizer.var.MatrixExpression;
-import angland.optimizer.var.ScalarExpression;
 import angland.optimizer.var.ScalarValue;
 
 
@@ -12,52 +12,54 @@ public class LstmCell {
 
   private FeedForwardLayer<String> retain;
 
-  private static final ScalarExpression<String> one = ScalarExpression.constant(1);
-  private static final ScalarExpression<String> minusOne = ScalarExpression.constant(1);
+  private static final ScalarValue<String> one = ScalarValue.constant(1);
+  private static final ScalarValue<String> minusOne = ScalarValue.constant(1);
   private final int size;
   private FeedForwardLayer<String> modify;
   private FeedForwardLayer<String> select;
 
-  public LstmCell(String varPrefix, int size) {
+  public LstmCell(String varPrefix, int size, Map<IndexedKey<String>, Double> context) {
     this.retain =
         new FeedForwardLayer<>(size, size, ScalarValue::sigmoid, varPrefix + "_retain_w", varPrefix
-            + "_retain_b");
+            + "_retain_b", context);
     this.modify =
         new FeedForwardLayer<>(size, size, ScalarValue::tanh, varPrefix + "_modify_w", varPrefix
-            + "_modify_b");
+            + "_modify_b", context);
     this.select =
-        new FeedForwardLayer<>(size, size, ScalarValue::sigmoid, varPrefix + "_retain_w", varPrefix
-            + "_retain_b");
+        new FeedForwardLayer<>(size, size, ScalarValue::sigmoid, varPrefix + "_select_w", varPrefix
+            + "_select_b", context);
     this.size = size;
   }
 
-  public LstmStateTupleExpression<String> apply(LstmStateTupleExpression<String> input) {
+  public LstmStateTuple<String> apply(LstmStateTuple<String> input) {
 
-    MatrixExpression<String> retainHidden = retain.apply(input.getExposedState());
+    IMatrixValue<String> retainHidden = retain.apply(input.getExposedState());
 
-    MatrixExpression<String> replaceHidden = minusOne.times(retainHidden).addToAll(one);
+    IMatrixValue<String> replaceHidden = minusOne.times(retainHidden).transform(s -> s.plus(one));
 
-    MatrixExpression<String> modifier = modify.apply(input.getExposedState());
-    MatrixExpression<String> replaceModify = replaceHidden.pointwiseMultiply(modifier);
+    IMatrixValue<String> modifier = modify.apply(input.getExposedState());
+    IMatrixValue<String> replaceModify = replaceHidden.pointwiseMultiply(modifier);
 
-    MatrixExpression<String> hiddenModified =
+    IMatrixValue<String> hiddenModified =
         input.getHiddenState().pointwiseMultiply(retainHidden).plus(replaceModify);
 
 
-    MatrixExpression<String> selector = select.apply(input.getExposedState());
+    IMatrixValue<String> selector = select.apply(input.getExposedState());
 
-    MatrixExpression<String> cellOutput = selector.pointwiseMultiply(hiddenModified);
+    IMatrixValue<String> cellOutput = selector.pointwiseMultiply(hiddenModified);
 
-    return new LstmStateTupleExpression<>(hiddenModified, cellOutput);
+    return new LstmStateTuple<>(hiddenModified, cellOutput);
   }
 
   public int getSize() {
     return size;
   }
 
-  public Stream<IndexedKey<String>> getKeys() {
-    return Stream.concat(modify.getVarKeys(),
-        Stream.concat(select.getVarKeys(), retain.getVarKeys()));
+  public static Stream<IndexedKey<String>> getKeys(String varPrefix, int size) {
+    return Stream.concat(FeedForwardLayer.getVarKeys(varPrefix + "_retain_w", varPrefix
+        + "_retain_b", size, size), Stream.concat(
+        FeedForwardLayer.getVarKeys(varPrefix + "_modify_w", varPrefix + "_modify_b", size, size),
+        FeedForwardLayer.getVarKeys(varPrefix + "_select_w", varPrefix + "_select_b", size, size)));
   }
 
 

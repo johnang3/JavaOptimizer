@@ -22,21 +22,23 @@ public class MatrixTest {
   @Test
   public void testMatrixMultiply() {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
-    MatrixExpression<String> leftMatrix = MatrixExpression.variable("left", 2, 3);
+
     context.put(IndexedKey.matrixKey("left", 0, 0), 1.0);
     context.put(IndexedKey.matrixKey("left", 0, 1), 2.0);
     context.put(IndexedKey.matrixKey("left", 0, 2), 3.0);
     context.put(IndexedKey.matrixKey("left", 1, 0), 4.0);
     context.put(IndexedKey.matrixKey("left", 1, 1), 5.0);
     context.put(IndexedKey.matrixKey("left", 1, 2), 6.0);
-    MatrixExpression<String> rightMatrix = MatrixExpression.variable("right", 3, 2);
+
     context.put(IndexedKey.matrixKey("right", 0, 0), 1.0);
     context.put(IndexedKey.matrixKey("right", 0, 1), 2.0);
     context.put(IndexedKey.matrixKey("right", 1, 0), 3.0);
     context.put(IndexedKey.matrixKey("right", 1, 1), 4.0);
     context.put(IndexedKey.matrixKey("right", 2, 0), 5.0);
     context.put(IndexedKey.matrixKey("right", 2, 1), 6.0);
-    IMatrixValue<String> product = leftMatrix.times(rightMatrix).evaluate(context);
+    IMatrixValue<String> leftMatrix = IMatrixValue.var("left", 2, 3, context);
+    IMatrixValue<String> rightMatrix = IMatrixValue.var("right", 3, 2, context);
+    IMatrixValue<String> product = leftMatrix.times(rightMatrix);
     assertEquals(2, product.getHeight());
     assertEquals(2, product.getWidth());
     assertEquals(22.0, product.get(0, 0).value(), TOLERANCE);
@@ -48,12 +50,12 @@ public class MatrixTest {
   @Test
   public void testMatrixAdd() {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
-    MatrixExpression<String> leftMatrix = MatrixExpression.variable("m", 2, 2);
     context.put(IndexedKey.matrixKey("m", 0, 0), 1.0);
     context.put(IndexedKey.matrixKey("m", 0, 1), 2.0);
     context.put(IndexedKey.matrixKey("m", 1, 0), 4.0);
     context.put(IndexedKey.matrixKey("m", 1, 1), 5.0);
-    IMatrixValue<String> sum = leftMatrix.plus(leftMatrix).evaluate(context);
+    IMatrixValue<String> leftMatrix = IMatrixValue.var("m", 2, 2, context);
+    IMatrixValue<String> sum = leftMatrix.plus(leftMatrix);
     assertEquals(2, sum.getHeight());
     assertEquals(2, sum.getWidth());
     assertEquals(2, sum.get(0, 0).value(), TOLERANCE);
@@ -65,13 +67,14 @@ public class MatrixTest {
   @Test
   public void testScalarTimesMatrix() {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
-    MatrixExpression<String> matrix = MatrixExpression.variable("m", 2, 2);
+
     context.put(IndexedKey.matrixKey("m", 0, 0), 1.0);
     context.put(IndexedKey.matrixKey("m", 0, 1), 2.0);
     context.put(IndexedKey.matrixKey("m", 1, 0), 4.0);
     context.put(IndexedKey.matrixKey("m", 1, 1), 5.0);
-    ScalarExpression<String> scalar = ScalarExpression.constant(3);
-    IMatrixValue<String> product = scalar.times(matrix).evaluate(context);
+    IMatrixValue<String> matrix = IMatrixValue.var("m", 2, 2, context);
+    ScalarValue<String> scalar = ScalarValue.constant(3);
+    IMatrixValue<String> product = scalar.times(matrix);
     assertEquals(2, product.getHeight());
     assertEquals(2, product.getWidth());
     assertEquals(3, product.get(0, 0).value(), TOLERANCE);
@@ -83,14 +86,14 @@ public class MatrixTest {
   @Test
   public void testTranspose() {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
-    MatrixExpression<String> matrix = MatrixExpression.variable("m", 2, 3);
     context.put(IndexedKey.matrixKey("m", 0, 0), 1.0);
     context.put(IndexedKey.matrixKey("m", 0, 1), 2.0);
     context.put(IndexedKey.matrixKey("m", 0, 2), 3.0);
     context.put(IndexedKey.matrixKey("m", 1, 0), 4.0);
     context.put(IndexedKey.matrixKey("m", 1, 1), 5.0);
     context.put(IndexedKey.matrixKey("m", 1, 2), 6.0);
-    IMatrixValue<String> transpose = matrix.transpose().evaluate(context);
+    IMatrixValue<String> matrix = IMatrixValue.var("m", 2, 3, context);
+    IMatrixValue<String> transpose = matrix.transpose();
     assertEquals(3, transpose.getHeight());
     assertEquals(2, transpose.getWidth());
     assertEquals(1, transpose.get(0, 0).value(), TOLERANCE);
@@ -104,39 +107,37 @@ public class MatrixTest {
   @Test
   public void testColumnProximity() {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
-    MatrixExpression<String> a = MatrixExpression.variable("a", 2, 2);
+
     context.put(IndexedKey.matrixKey("a", 0, 0), 3.0);
     context.put(IndexedKey.matrixKey("a", 0, 1), 6.0);
     context.put(IndexedKey.matrixKey("a", 1, 0), 4.0);
     context.put(IndexedKey.matrixKey("a", 1, 1), -8.0);
-    MatrixExpression<String> b = MatrixExpression.variable("b", 2, 1);
     context.put(IndexedKey.matrixKey("b", 0, 0), 0.0);
     context.put(IndexedKey.matrixKey("b", 1, 0), 0.0);
-    MatrixExpression<String> norm = a.columnProximity(b);
-    IMatrixValue<String> matrixVal = norm.evaluate(context);
-    assertEquals(matrixVal.getHeight(), 1);
-    assertEquals(matrixVal.getWidth(), 2);
-    assertEquals(matrixVal.get(0, 0).value(), 5.0, TOLERANCE);
-    assertEquals(matrixVal.get(0, 1).value(), 10.0, TOLERANCE);
+    IMatrixValue<String> a = IMatrixValue.var("a", 2, 2, context);
+    IMatrixValue<String> b = IMatrixValue.var("b", 2, 1, context);
+    IMatrixValue<String> norm = a.columnProximity(b);
+    assertEquals(norm.getHeight(), 1);
+    assertEquals(norm.getWidth(), 2);
+    assertEquals(norm.get(0, 0).value(), 5.0, TOLERANCE);
+    assertEquals(norm.get(0, 1).value(), 10.0, TOLERANCE);
   }
 
   @Test
   public void testMaxIdx() {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
-    MatrixExpression<String> a = MatrixExpression.variable("a", 3, 1);
     context.put(IndexedKey.matrixKey("a", 0, 0), 3.0);
     context.put(IndexedKey.matrixKey("a", 1, 0), 6.0);
     context.put(IndexedKey.matrixKey("a", 2, 0), 4.0);
-    ScalarExpression<String> maxIdx = a.maxIdx();
-    assertEquals(1, maxIdx.evaluate(context).value(), TOLERANCE);
+    IMatrixValue<String> a = IMatrixValue.var("a", 3, 1, context);
+    ScalarValue<String> maxIdx = a.maxIdx();
+    assertEquals(1, maxIdx.value(), TOLERANCE);
   }
 
   @Ignore
   @Test
   public void largeMatrixPerformanceTest() {
     int size = 250;
-    MatrixExpression<String> left = MatrixExpression.variable("left", size, size);
-    MatrixExpression<String> right = MatrixExpression.variable("right", size, size);
     Map<IndexedKey<String>, Double> context = new HashMap<>();
     for (int i = 0; i < size; ++i) {
       for (int j = 0; j < size; ++j) {
@@ -144,21 +145,22 @@ public class MatrixTest {
         context.put(IndexedKey.matrixKey("right", i, j), Math.random());
       }
     }
+    IMatrixValue<String> left = IMatrixValue.var("left", size, size, context);
+    IMatrixValue<String> right = IMatrixValue.var("right", size, size, context);
     // warmup
-    left.times(right).evaluate(context);
+    left.times(right);
     long start = System.currentTimeMillis();
     // run
-    left.times(right).evaluate(context);
+    left.times(right);
     long end = System.currentTimeMillis();
     System.out.println("Matrix times matrix time millis = " + (end - start));
   }
 
-  @Ignore
+
   @Test
   public void vectorTimeMatrixPerformanceTest() {
-    int size = 1000;
-    MatrixExpression<String> left = MatrixExpression.variable("left", 1, size);
-    MatrixExpression<String> right = MatrixExpression.variable("right", size, size);
+    int size = 200;
+
     Map<IndexedKey<String>, Double> context = new HashMap<>();
     for (int i = 0; i < size; ++i) {
       context.put(IndexedKey.matrixKey("left", 0, i), Math.random());
@@ -166,51 +168,20 @@ public class MatrixTest {
         context.put(IndexedKey.matrixKey("right", i, j), Math.random());
       }
     }
+    IMatrixValue<String> left = IMatrixValue.var("left", 1, size, context);
+    IMatrixValue<String> right = IMatrixValue.var("right", size, size, context);
     // warmup
     for (int i = 0; i < 10; ++i) {
-      left.times(right).evaluate(context);
+      left.times(right);
     }
     long start = System.currentTimeMillis();
     // run
     for (int i = 0; i < 10; ++i) {
-      left.times(right).evaluate(context);
+      left.times(right);
     }
     long end = System.currentTimeMillis();
     System.out.println("Vector times matrix time millis = " + (end - start));
   }
 
 
-  @SuppressWarnings("unchecked")
-  @Test
-  public void testIntermediateValuesRetained() {
-    MatrixExpression<String> a = MatrixExpression.variable("a", 1, 1);
-    MatrixExpression<String> b = MatrixExpression.variable("b", 1, 1);
-    MatrixExpression<String> c = a.times(b);
-    MatrixExpression<String> d = b.times(c);
-    Map<IndexedKey<String>, Double> context = new HashMap<>();
-    context.put(IndexedKey.matrixKey("a", 0, 0), 2.0);
-    context.put(IndexedKey.matrixKey("b", 0, 0), 2.0);
-    Map<Object, Object> partialSolutions = new HashMap<>();
-    d.evaluateAndCache(context, partialSolutions);
-    assertEquals(8.0, ((IMatrixValue<String>) partialSolutions.get(d)).get(0, 0).value(), TOLERANCE);
-    assertEquals(4.0, ((IMatrixValue<String>) partialSolutions.get(c)).get(0, 0).value(), TOLERANCE);
-    assertEquals(2.0, ((IMatrixValue<String>) partialSolutions.get(b)).get(0, 0).value(), TOLERANCE);
-  }
-
-  @SuppressWarnings("unchecked")
-  @Test
-  public void testIntermediateValuesRetainedPointWiseMultiply() {
-    MatrixExpression<String> a = MatrixExpression.variable("a", 1, 1);
-    MatrixExpression<String> b = MatrixExpression.variable("b", 1, 1);
-    MatrixExpression<String> c = a.pointwiseMultiply(b);
-    MatrixExpression<String> d = b.pointwiseMultiply(c);
-    Map<IndexedKey<String>, Double> context = new HashMap<>();
-    context.put(IndexedKey.matrixKey("a", 0, 0), 2.0);
-    context.put(IndexedKey.matrixKey("b", 0, 0), 2.0);
-    Map<Object, Object> partialSolutions = new HashMap<>();
-    d.evaluateAndCache(context, partialSolutions);
-    assertEquals(8.0, ((IMatrixValue<String>) partialSolutions.get(d)).get(0, 0).value(), TOLERANCE);
-    assertEquals(4.0, ((IMatrixValue<String>) partialSolutions.get(c)).get(0, 0).value(), TOLERANCE);
-    assertEquals(2.0, ((IMatrixValue<String>) partialSolutions.get(b)).get(0, 0).value(), TOLERANCE);
-  }
 }

@@ -1,6 +1,5 @@
 package angland.optimizer.var;
 
-import java.util.Map;
 
 public class TransposeView<VarKey> implements IMatrixValue<VarKey> {
 
@@ -26,10 +25,6 @@ public class TransposeView<VarKey> implements IMatrixValue<VarKey> {
     return source.get(column, row);
   }
 
-  @Override
-  public Map<IndexedKey<VarKey>, Double> getContext() {
-    return source.getContext();
-  }
 
   @Override
   public IMatrixValue<VarKey> transpose() {

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
 import angland.optimizer.var.ArrayMatrixValue.Builder;
@@ -16,45 +17,91 @@ public interface IMatrixValue<VarKey> {
 
   public ScalarValue<VarKey> get(int row, int column);
 
-  public Map<IndexedKey<VarKey>, Double> getContext();
 
-  public default IMatrixValue<VarKey> add(IMatrixValue<VarKey> other) {
+  public static <VarKey> IMatrixValue<VarKey> var(VarKey key, int height, int width,
+      Map<IndexedKey<VarKey>, Double> context) {
+    ArrayMatrixValue.Builder<VarKey> builder = new ArrayMatrixValue.Builder<VarKey>(height, width);
+    for (int i = 0; i < height; ++i) {
+      for (int j = 0; j < width; ++j) {
+        IndexedKey<VarKey> indexedKey = IndexedKey.matrixKey(key, i, j);
+        builder.set(i, j, ScalarValue.varIndexed(indexedKey, context));
+      }
+    }
+    return builder.build();
+  }
+
+  public static <VarKey> IMatrixValue<VarKey> repeat(ScalarValue<VarKey> val, int height, int width) {
+    ArrayMatrixValue.Builder<VarKey> builder = new ArrayMatrixValue.Builder<VarKey>(height, width);
+    for (int i = 0; i < height; ++i) {
+      for (int j = 0; j < width; ++j) {
+        builder.set(i, j, val);
+      }
+    }
+    return builder.build();
+  }
+
+  public default ScalarValue<VarKey> elementSum() {
+    ScalarValue.Builder<VarKey> sum = new ScalarValue.Builder<>(1);
+    for (int i = 0; i < getHeight(); ++i) {
+      for (int j = 0; j < getWidth(); ++j) {
+        sum.increment(get(i, j));
+      }
+    }
+    return sum.build();
+  }
+
+  public default IMatrixValue<VarKey> pointwise(IMatrixValue<VarKey> other,
+      BinaryOperator<ScalarValue<VarKey>> op) {
     if (this.getHeight() != other.getHeight()) {
-      throw new RuntimeException("Cannot add matrices of differing heights.");
+      throw new RuntimeException(
+          "Cannot perform pointwise operations matrices of differing heights.");
     }
     if (this.getWidth() != other.getWidth()) {
-      throw new RuntimeException("Cannot add matrices of differing widths");
+      throw new RuntimeException("Cannot perform pointwise operations matrices of differing widths");
     }
     Builder<VarKey> newMatrix = new Builder<>(getHeight(), getWidth());
     for (int i = 0; i < getHeight(); ++i) {
       for (int j = 0; j < getWidth(); ++j) {
-        newMatrix.set(i, j, this.get(i, j).plus(other.get(i, j)));
+        newMatrix.set(i, j, op.apply(this.get(i, j), other.get(i, j)));
       }
     }
     return newMatrix.build();
   }
 
+  public default IMatrixValue<VarKey> plus(IMatrixValue<VarKey> other) {
+    return pointwise(other, ScalarValue::plus);
+  }
 
-  public default IMatrixValue<VarKey> multiplyPointwise(IMatrixValue<VarKey> other) {
+
+  public default IMatrixValue<VarKey> pointwiseMultiply(IMatrixValue<VarKey> other) {
+    return pointwise(other, ScalarValue::times);
+  }
+
+  public default IMatrixValue<VarKey> columnProximity(IMatrixValue<VarKey> other) {
     if (this.getHeight() != other.getHeight()) {
-      throw new RuntimeException("Cannot add matrices of differing heights.");
+      throw new IllegalArgumentException("Cannot compare columns in matrices of differing heights");
     }
-    if (this.getWidth() != other.getWidth()) {
-      throw new RuntimeException("Cannot add matrices of differing widths.");
+    if (other.getWidth() != 1) {
+      throw new IllegalArgumentException(
+          "Can only compare column proximity to a matrix of width 1.");
     }
-    Builder<VarKey> newMatrix = new Builder<>(getHeight(), getWidth());
-    for (int i = 0; i < getHeight(); ++i) {
-      for (int j = 0; j < getWidth(); ++j) {
-        newMatrix.set(i, j, this.get(i, j).times(other.get(i, j)));
+    Builder<VarKey> newMatrix = new Builder<>(1, getWidth());
+    for (int i = 0; i < getWidth(); ++i) {
+      ScalarValue.Builder<VarKey> builder = new ScalarValue.Builder<>(1);
+      for (int j = 0; j < getHeight(); ++j) {
+        builder.increment(this.get(j, i).minus(other.get(j, 0)).power(2));
       }
+      newMatrix.set(0, i, builder.build().power(.5));
     }
     return newMatrix.build();
   }
+
+
 
   public default IMatrixValue<VarKey> times(IMatrixValue<VarKey> other) {
     if (this.getWidth() != other.getHeight()) {
       throw new IllegalArgumentException("Width of left matrix (" + getWidth()
-          + ") must equal height of right matrix (" + other.getHeight() + ")");
+          + ") must equal height of right " + "matrix (" + other.getHeight() + ")");
     }
     Builder<VarKey> builder = new Builder<>(this.getHeight(), other.getWidth());
     for (int i = 0; i < this.getHeight(); ++i) {
@@ -138,17 +185,19 @@ public interface IMatrixValue<VarKey> {
     return builder.build();
   }
 
-  public default MatrixExpression<VarKey> toConstant() {
-    return (ctx, cache) -> {
-      ArrayMatrixValue.Builder<VarKey> builder =
-          new ArrayMatrixValue.Builder<>(getHeight(), getWidth());
-      for (int i = 0; i < getHeight(); ++i) {
-        for (int j = 0; j < getWidth(); ++j) {
-          ScalarExpression<VarKey> c = ScalarExpression.constant(this.get(i, j).value());
-          builder.set(i, j, c.evaluate(ctx));
-        }
+  public default IMatrixValue<VarKey> toConstant() {
+    ArrayMatrixValue.Builder<VarKey> builder =
+        new ArrayMatrixValue.Builder<>(getHeight(), getWidth());
+    for (int i = 0; i < getHeight(); ++i) {
+      for (int j = 0; j < getWidth(); ++j) {
+        ScalarValue<VarKey> c = ScalarValue.constant(this.get(i, j).value());
+        builder.set(i, j, c);
       }
-      return builder.build();
-    };
+    }
+    return builder.build();
+  }
+
+  public default IMatrixValue<VarKey> getColumn(ScalarValue<VarKey> column) {
+    return new MatrixRangeView<>(this, 0, (int) column.value(), getHeight(), 1);
   }
 }

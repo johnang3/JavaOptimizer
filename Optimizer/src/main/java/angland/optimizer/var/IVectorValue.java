@@ -20,7 +20,7 @@ public interface IVectorValue<VarKey> extends IMatrixValue<VarKey> {
     return get(idx, 0);
   }
 
-  public default ArrayVectorValue<VarKey> add(IMatrixValue<VarKey> other) {
+  public default ArrayVectorValue<VarKey> plus(IMatrixValue<VarKey> other) {
     if (this.getHeight() != other.getHeight()) {
       throw new RuntimeException("Cannot add matrices of differing heights.");
     }

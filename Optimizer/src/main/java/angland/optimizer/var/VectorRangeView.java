@@ -1,6 +1,5 @@
 package angland.optimizer.var;
 
-import java.util.Map;
 
 public class VectorRangeView<VarKey> implements IVectorValue<VarKey> {
 
@@ -32,10 +31,6 @@ public class VectorRangeView<VarKey> implements IVectorValue<VarKey> {
     return source.get(startRow + row * stepRow, startCol + row * stepCol);
   }
 
-  @Override
-  public Map<IndexedKey<VarKey>, Double> getContext() {
-    return source.getContext();
-  }
 
   @Override
   public int getHeight() {

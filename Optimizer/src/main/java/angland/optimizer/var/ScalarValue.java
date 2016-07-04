@@ -17,6 +17,21 @@ public class ScalarValue<VarKey> {
   private final double value;
   private final Map<IndexedKey<VarKey>, Double> gradient;
 
+  public static <VarKey> ScalarValue<VarKey> constant(double value) {
+    return new ScalarValue<>(value, new HashMap<>(0));
+  }
+
+  public static <VarKey> ScalarValue<VarKey> var(VarKey key, Map<IndexedKey<VarKey>, Double> context) {
+    return varIndexed(IndexedKey.scalarKey(key), context);
+  }
+
+  public static <VarKey> ScalarValue<VarKey> varIndexed(IndexedKey<VarKey> key,
+      Map<IndexedKey<VarKey>, Double> context) {
+    Map<IndexedKey<VarKey>, Double> gradient = new HashMap<>(1, 1);
+    gradient.put(key, 1.0);
+    return new ScalarValue<>(context.get(key), gradient);
+  }
+
   ScalarValue(double value, Map<IndexedKey<VarKey>, Double> gradient) {
     super();
     this.value = value;
@@ -39,6 +54,10 @@ public class ScalarValue<VarKey> {
     double newVal = value + other.value();
     Map<IndexedKey<VarKey>, Double> newGrad = MathUtils.add(gradient, other.gradient);
     return new ScalarValue<>(newVal, newGrad);
+  }
+
+  public ScalarValue<VarKey> minus(ScalarValue<VarKey> other) {
+    return this.plus(other.times(constant(-1)));
   }
 
   public ScalarValue<VarKey> divide(ScalarValue<VarKey> other) {
@@ -146,6 +165,12 @@ public class ScalarValue<VarKey> {
     return new ScalarValue<>(newVal, newGradient);
   }
 
+  public ScalarValue<VarKey> ln() {
+    double newVal = Math.log(value);
+    Map<IndexedKey<VarKey>, Double> newGradient = new HashMap<>(gradient.size(), 1);
+    gradient.forEach((k, v) -> newGradient.put(k, v / newVal));
+    return new ScalarValue<>(newVal, newGradient);
+  }
 
   private double sigmoidVal(double x) {
     return 1.0 / (1 + Math.exp(-x));
