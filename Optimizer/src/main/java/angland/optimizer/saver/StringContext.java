@@ -1,5 +1,6 @@
 package angland.optimizer.saver;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -15,9 +16,13 @@ import angland.optimizer.var.IndexedKey;
 public class StringContext {
 
   public static Map<IndexedKey<String>, Double> loadContext(String file) {
+    return loadContext(new File(file));
+  }
+
+  public static Map<IndexedKey<String>, Double> loadContext(File file) {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
     try {
-      Files.lines(Paths.get(file)).forEach(
+      Files.lines(Paths.get(file.getAbsolutePath())).forEach(
           line -> {
             String[] split = line.split(" ");
             String key = split[0];
@@ -35,6 +40,10 @@ public class StringContext {
   }
 
   public static void saveContext(Map<IndexedKey<String>, Double> context, String file) {
+    saveContext(context, new File(file));
+  }
+
+  public static void saveContext(Map<IndexedKey<String>, Double> context, File file) {
     try (FileWriter fw = new FileWriter(file); PrintWriter pw = new PrintWriter(fw);) {
       context.forEach((k, v) -> {
         StringBuilder sb = new StringBuilder();

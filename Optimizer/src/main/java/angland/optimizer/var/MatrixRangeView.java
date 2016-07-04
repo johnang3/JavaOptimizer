@@ -12,6 +12,14 @@ public class MatrixRangeView<VarKey> implements IMatrixValue<VarKey> {
   public MatrixRangeView(IMatrixValue<VarKey> source, int startRow, int startCol, int height,
       int width) {
     super();
+    if (startRow > source.getHeight()) {
+      throw new IllegalArgumentException("Target start row " + startRow
+          + " greater than source height " + source.getHeight());
+    }
+    if (startCol > source.getWidth()) {
+      throw new IllegalArgumentException("Target start col " + startCol
+          + " greater than source width " + source.getWidth());
+    }
     this.source = source;
     this.startRow = startRow;
     this.startCol = startCol;

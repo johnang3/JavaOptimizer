@@ -1,9 +1,13 @@
 package angland.optimizer.ngram;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -16,29 +20,30 @@ import angland.optimizer.var.ScalarValue;
 
 public class NGramPredictor {
 
-  private Map<IndexedKey<String>, Double> context;
-  private IMatrixValue<String> embedding;
-  private LstmCell cell;
+  private final Map<IndexedKey<String>, Double> context;
+  private final IMatrixValue<String> embedding;
+  private final LstmCell cell;
+  private final ScalarValue<String> one = ScalarValue.constant(1);
 
-  public NGramPredictor(int vocabulary, int lstmSize) {
-    Map<IndexedKey<String>, Double> context = new HashMap<>();
-    Stream.concat(IndexedKey.getAllMatrixKeys("embedding", lstmSize, vocabulary).stream(),
-        LstmCell.getKeys("cell", lstmSize)).forEach(k -> {
-      context.put(k, Math.random() * 2 - 1);
-    });
-    this.embedding = IMatrixValue.var("embedding", lstmSize, vocabulary, context);
-    this.cell = new LstmCell("cell", lstmSize, context);
-
-    this.context = context;
+  public static Map<IndexedKey<String>, Double> randomizedContext(int vocabulary, int lstmSize) {
+    Map<IndexedKey<String>, Double> map = new HashMap<>();
+    getKeys(vocabulary, lstmSize).forEach(k -> map.put(k, Math.random() * 2 - 1));
+    return map;
   }
 
+  public static Stream<IndexedKey<String>> getKeys(int vocabulary, int lstmSize) {
+    return Stream.concat(IndexedKey.getAllMatrixKeys("embedding", lstmSize, vocabulary).stream(),
+        LstmCell.getKeys("cell", lstmSize));
+  }
+
+  public NGramPredictor(int vocabulary, int lstmSize, Map<IndexedKey<String>, Double> context) {
+    this.embedding = IMatrixValue.var("embedding", lstmSize, vocabulary, context);
+    this.cell = new LstmCell("cell", lstmSize, context);
+    this.context = context;
+  }
 
   public Map<IndexedKey<String>, Double> getContext() {
     return context;
-  }
-
-  public void setContext(Map<IndexedKey<String>, Double> context) {
-    this.context = context;
   }
 
 
@@ -88,16 +93,43 @@ public class NGramPredictor {
           embedding.columnProximity(outputState.getExposedState()).transform(v -> v.power(-1))
               .transpose().softmax();
       ArrayMatrixValue.Builder<String> targetBuilder =
-          new ArrayMatrixValue.Builder<>(cell.getSize(), 1);
-      for (int j = 0; j < cell.getSize(); ++j) {
+          new ArrayMatrixValue.Builder<>(embedding.getWidth(), 1);
+      for (int j = 0; j < embedding.getWidth(); ++j) {
         targetBuilder.set(j, 0, ScalarValue.constant(j == output ? 1 : 0));
       }
       IMatrixValue<String> target = targetBuilder.build();
       ScalarValue<String> epsilon = ScalarValue.constant(.0001);
-      IMatrixValue<String> crossEntropy =
-          softmax.pointwise(target, (a, b) -> a.plus(epsilon).ln().times(b));
-      lossBuilder.increment(crossEntropy.elementSum());
+      BinaryOperator<ScalarValue<String>> ce = (a, b) -> a.plus(epsilon).ln().times(b);
+      BinaryOperator<ScalarValue<String>> twoSidedCe =
+          (a, b) -> ce.apply(a, b).plus(ce.apply(one.minus(a), one.minus(b)));
+      IMatrixValue<String> crossEntropy = softmax.pointwise(target, (a, b) -> b.times(a.ln()));
+      /*
+       * StringBuilder sb = new StringBuilder("Target: "); StringBuilder sb2 = new
+       * StringBuilder("Softmax: "); StringBuilder sb3 = new StringBuilder("CrossEntropy: "); for
+       * (int j = 0; j < target.getHeight(); ++j) { sb.append(target.get(j, 0).value() + ", ");
+       * sb2.append(softmax.get(j, 0).value() + ", "); sb3.append(crossEntropy.get(j, 0).value() +
+       * ", "); } System.out.println(sb.toString()); System.out.println(sb2.toString());
+       * System.out.println(sb3.toString());
+       */
+      lossBuilder.increment(crossEntropy.elementSum().divide(
+          ScalarValue.constant(target.getHeight())));
     }
-    return lossBuilder.build();
+    return lossBuilder.build().times(ScalarValue.constant(-1))
+        .divide(ScalarValue.constant(inputInts.size() - 1));
+  }
+
+  public ScalarValue<String> getBatchLoss(Collection<List<Integer>> inputs, ExecutorService es) {
+    List<Callable<ScalarValue<String>>> losses = new ArrayList<>();
+    inputs.forEach(input -> losses.add(() -> getLoss(input)));
+    try {
+
+      ScalarValue.Builder<String> resultBuilder =
+          new ScalarValue.Builder<>(cell.getSize() + embedding.getWidth() * embedding.getHeight());
+      inputs.forEach(input -> resultBuilder.increment(getLoss(input)));
+      return resultBuilder.build();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
   }
 }

@@ -183,5 +183,36 @@ public class MatrixTest {
     System.out.println("Vector times matrix time millis = " + (end - start));
   }
 
+  @Test
+  public void testGetColumn() {
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    context.put(IndexedKey.matrixKey("m", 0, 0), 1.0);
+    context.put(IndexedKey.matrixKey("m", 0, 1), 2.0);
+    context.put(IndexedKey.matrixKey("m", 1, 0), 4.0);
+    context.put(IndexedKey.matrixKey("m", 1, 1), 5.0);
+    context.put(IndexedKey.matrixKey("m", 2, 0), 7.0);
+    context.put(IndexedKey.matrixKey("m", 2, 1), 8.0);
+    IMatrixValue<String> matrix = IMatrixValue.var("m", 3, 2, context);
+    IMatrixValue<String> col = matrix.getColumn(ScalarValue.constant(1));
+    assertEquals(1, col.getWidth());
+    assertEquals(3, col.getHeight());
+    assertEquals(2.0, col.get(0, 0).value(), TOLERANCE);
+    assertEquals(5.0, col.get(1, 0).value(), TOLERANCE);
+  }
+
+  @Test
+  public void testSoftmax() {
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    context.put(IndexedKey.matrixKey("m", 0, 0), 1.0);
+    context.put(IndexedKey.matrixKey("m", 1, 0), 2.0);
+    context.put(IndexedKey.matrixKey("m", 2, 0), 4.0);
+    context.put(IndexedKey.matrixKey("m", 3, 0), 5.0);
+    context.put(IndexedKey.matrixKey("m", 4, 0), 7.0);
+    context.put(IndexedKey.matrixKey("m", 5, 0), 8.0);
+    IMatrixValue<String> matrix = IMatrixValue.var("m", 6, 1, context);
+    IMatrixValue<String> softmax = matrix.softmax();
+    assertEquals(1.0, softmax.elementSum().value(), TOLERANCE);
+  }
+
 
 }

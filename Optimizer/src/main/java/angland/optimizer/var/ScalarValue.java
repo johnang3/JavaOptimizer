@@ -27,6 +27,10 @@ public class ScalarValue<VarKey> {
 
   public static <VarKey> ScalarValue<VarKey> varIndexed(IndexedKey<VarKey> key,
       Map<IndexedKey<VarKey>, Double> context) {
+    Double val = context.get(key);
+    if (val == null) {
+      throw new RuntimeException("No context value for key " + key);
+    }
     Map<IndexedKey<VarKey>, Double> gradient = new HashMap<>(1, 1);
     gradient.put(key, 1.0);
     return new ScalarValue<>(context.get(key), gradient);
@@ -99,7 +103,7 @@ public class ScalarValue<VarKey> {
     private final Map<IndexedKey<VarKey>, Double> gradient;
 
     public Builder(int gradientVars) {
-      gradient = new HashMap<>(gradientVars);
+      gradient = new HashMap<>(gradientVars, 1);
     }
 
     public double getValue() {
@@ -168,7 +172,7 @@ public class ScalarValue<VarKey> {
   public ScalarValue<VarKey> ln() {
     double newVal = Math.log(value);
     Map<IndexedKey<VarKey>, Double> newGradient = new HashMap<>(gradient.size(), 1);
-    gradient.forEach((k, v) -> newGradient.put(k, v / newVal));
+    gradient.forEach((k, v) -> newGradient.put(k, v / value));
     return new ScalarValue<>(newVal, newGradient);
   }
 

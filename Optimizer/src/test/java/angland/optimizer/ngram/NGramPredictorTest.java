@@ -1,20 +1,59 @@
 package angland.optimizer.ngram;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
+
+import angland.optimizer.optimizer.GradientDescentOptimizer;
+import angland.optimizer.optimizer.Range;
+import angland.optimizer.var.IndexedKey;
+import angland.optimizer.var.ScalarValue;
 
 public class NGramPredictorTest {
 
 
   @Test
-  public void test() {
-    NGramPredictor predictor = new NGramPredictor(10, 10);
+  public void testOutputHasNoException() {
+    NGramPredictor predictor = new NGramPredictor(20, 10, NGramPredictor.randomizedContext(20, 10));
     List<Integer> input = new ArrayList<>();
     input.add(0);
     input.add(1);
-    System.out.println(predictor.predictNext(input, 5));
+    predictor.predictNext(input, 5);
   }
+
+  @Test
+  public void testLossHasNoExceptions() {
+    NGramPredictor predictor = new NGramPredictor(20, 10, NGramPredictor.randomizedContext(20, 10));
+    List<Integer> input = new ArrayList<>();
+    input.add(1);
+    input.add(2);
+    input.add(3);
+    input.add(4);
+    predictor.getLoss(input).value();
+  }
+
+  @Test
+  public void testLossReduction() {
+    Map<IndexedKey<String>, Double> context = NGramPredictor.randomizedContext(8, 6);
+    Map<IndexedKey<String>, Range> variableRanges = new HashMap<>();
+    context.forEach((k, v) -> variableRanges.put(k, new Range(-1, 1)));
+    NGramPredictor predictor = new NGramPredictor(8, 6, context);
+    List<Integer> input = new ArrayList<>();
+    input.add(1);
+    input.add(1);
+    input.add(1);
+    input.add(1);
+    for (int i = 0; i < 10; ++i) {
+      System.out.println(predictor.predictNext(input, 5));
+      ScalarValue<String> loss = predictor.getLoss(input);
+      System.out.println(loss);
+      context = GradientDescentOptimizer.step(loss, context, variableRanges, 5);
+      predictor = new NGramPredictor(8, 6, context);
+    }
+  }
+
 
 }

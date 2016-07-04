@@ -19,15 +19,17 @@ public class GradientDescentOptimizer {
    */
   public static <Result, VarType> Map<IndexedKey<VarType>, Double> step(
       ScalarValue<VarType> calculation, Map<IndexedKey<VarType>, Double> context,
-      Map<VarType, Range> variableRanges, double gradientMultiplier) {
+      Map<IndexedKey<VarType>, Range> variableRanges, double gradientMultiplier) {
     if (gradientMultiplier <= 0) {
       throw new RuntimeException("MaxStepDistance must be greater than 0.");
     }
     Map<IndexedKey<VarType>, Double> result = new HashMap<>();
     for (Map.Entry<IndexedKey<VarType>, Double> contextEntry : context.entrySet()) {
+      if (contextEntry.getValue() == null) {
+        throw new RuntimeException("Null value for entry of key " + contextEntry.getKey());
+      }
       double stepped =
-          contextEntry.getValue() - calculation.getGradient().get(contextEntry.getKey())
-              * gradientMultiplier;
+          contextEntry.getValue() - calculation.d(contextEntry.getKey()) * gradientMultiplier;
       Range range = variableRanges.get(contextEntry.getKey());
       if (range != null) {
         if (stepped < range.getMin()) {
@@ -44,7 +46,8 @@ public class GradientDescentOptimizer {
 
   public static <Result, VarKey> Solution<Result, VarKey> stepToMinimum(
       Function<Map<IndexedKey<VarKey>, Double>, Result> getResult,
-      Function<Result, ScalarValue<VarKey>> getObjective, Map<VarKey, Range> variableRanges,
+      Function<Result, ScalarValue<VarKey>> getObjective,
+      Map<IndexedKey<VarKey>, Range> variableRanges,
       Map<IndexedKey<VarKey>, Double> initialContext, double step, double minStep) {
     Solution<Result, VarKey> bestResult = new Solution<>(initialContext, getResult, getObjective);
     while (step > minStep) {

@@ -92,4 +92,19 @@ public class CalculationTest {
   }
 
 
+  @Test
+  public void testLn() {
+    ScalarValue<String> a = ScalarValue.constant(1.0);
+    assertEquals(0.0, a.ln().value(), TOLERANCE);
+  }
+
+  @Test
+  public void testLnDerivative() {
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    context.put(IndexedKey.scalarKey("a"), .5);
+    ScalarValue<String> a = ScalarValue.var("a", context);
+    assertEquals(2.0, a.ln().d(IndexedKey.scalarKey("a")), TOLERANCE);
+  }
+
+
 }
