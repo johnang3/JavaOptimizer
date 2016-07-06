@@ -41,11 +41,10 @@ public class NGramTrainer {
       cumulativeLoss = cumulativeLoss.plus(loss);
       if (i % saveInterval == 0) {
         double timeTakenSeconds = (System.currentTimeMillis() - startTime) / 1000.0;
-        double sequencesPerSecond = (saveInterval * batchSize) / timeTakenSeconds;
+        double sequencesPerSecond = (saveInterval * batchSize * i) / timeTakenSeconds;
         System.out.println("Batch loss " + cumulativeLoss.value());
         System.out.println("Sequences per second " + sequencesPerSecond);
         StringContext.saveContext(context, contextPath);
-        startTime = System.currentTimeMillis();
         cumulativeLoss = ScalarValue.constant(0);
       }
     }

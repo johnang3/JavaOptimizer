@@ -85,10 +85,10 @@ public class CalculationTest {
   @Test
   public void testVarPower() {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
-    context.put(IndexedKey.scalarKey("a"), 2.0);
-    ScalarValue<String> result = ScalarValue.var("a", context).power(3);
-    assertEquals(8.0, result.value(), TOLERANCE);
-    assertEquals(12.0, result.d(IndexedKey.scalarKey("a")), TOLERANCE);
+    context.put(IndexedKey.scalarKey("a"), 3.0);
+    ScalarValue<String> result = ScalarValue.var("a", context).power(2).power(2);
+    assertEquals(81.0, result.value(), TOLERANCE);
+    assertEquals(108.0, result.d(IndexedKey.scalarKey("a")), TOLERANCE);
   }
 
 
@@ -103,7 +103,16 @@ public class CalculationTest {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
     context.put(IndexedKey.scalarKey("a"), .5);
     ScalarValue<String> a = ScalarValue.var("a", context);
-    assertEquals(2.0, a.ln().d(IndexedKey.scalarKey("a")), TOLERANCE);
+    assertEquals(6.0, a.power(3).ln().d(IndexedKey.scalarKey("a")), TOLERANCE);
+  }
+
+  @Test
+  public void testExpDerivative() {
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    context.put(IndexedKey.scalarKey("a"), 3.0);
+    ScalarValue<String> a = ScalarValue.var("a", context);
+    assertEquals(5.0 * Math.exp(15),
+        a.times(ScalarValue.constant(5)).exp().d(IndexedKey.scalarKey("a")), TOLERANCE);
   }
 
 

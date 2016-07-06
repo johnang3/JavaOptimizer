@@ -4,7 +4,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
+import angland.optimizer.var.scalar.IScalarValue;
 import angland.optimizer.vec.MathUtils;
 
 /**
@@ -12,7 +14,7 @@ import angland.optimizer.vec.MathUtils;
  *
  * @param <VarKey>
  */
-public class ScalarValue<VarKey> {
+public class ScalarValue<VarKey> implements IScalarValue<VarKey> {
 
   private final double value;
   private final Map<IndexedKey<VarKey>, Double> gradient;
@@ -65,7 +67,17 @@ public class ScalarValue<VarKey> {
   }
 
   public ScalarValue<VarKey> divide(ScalarValue<VarKey> other) {
-    return times(other.power(-1));
+    double newVal = value / other.value();
+    Map<IndexedKey<VarKey>, Double> newGrad =
+        new HashMap<>(this.gradient.size() + other.gradient.size());
+    for (Map.Entry<IndexedKey<VarKey>, Double> entry : this.gradient.entrySet()) {
+      newGrad.merge(entry.getKey(), entry.getValue() / other.value(), Double::sum);
+    }
+    for (Map.Entry<IndexedKey<VarKey>, Double> entry : other.gradient.entrySet()) {
+      newGrad.merge(entry.getKey(), -entry.getValue() * this.value / (Math.pow(other.value(), 2)),
+          Double::sum);
+    }
+    return new ScalarValue<>(newVal, newGrad);
   }
 
   /**
@@ -77,7 +89,7 @@ public class ScalarValue<VarKey> {
     double newVal = Math.exp(value);
     Map<IndexedKey<VarKey>, Double> newGrad = new HashMap<>();
     for (Map.Entry<IndexedKey<VarKey>, Double> e : gradient.entrySet()) {
-      newGrad.put(e.getKey(), Math.exp(e.getValue()));
+      newGrad.put(e.getKey(), e.getValue() * Math.exp(value));
     }
     return new ScalarValue<>(newVal, newGrad);
   }
@@ -151,21 +163,23 @@ public class ScalarValue<VarKey> {
   public ScalarValue<VarKey> power(double exponent) {
     double newVal = Math.pow(value, exponent);
     Map<IndexedKey<VarKey>, Double> newGradient = new HashMap<>(gradient.size(), 1);
-    gradient.forEach((k, v) -> newGradient.put(k, exponent * Math.pow(value, exponent - 1)));
+    gradient.forEach((k, v) -> newGradient.put(k, v * exponent * Math.pow(value, exponent - 1)));
     return new ScalarValue<>(newVal, newGradient);
   }
 
   public ScalarValue<VarKey> sigmoid() {
     double newVal = sigmoidVal(value);
     Map<IndexedKey<VarKey>, Double> newGradient = new HashMap<>(gradient.size(), 1);
-    gradient.forEach((k, v) -> newGradient.put(k, sigmoidVal(v) * (1 - sigmoidVal(v))));
+    gradient.forEach((k, v) -> newGradient.put(k, v * sigmoidVal(v) * (1 - sigmoidVal(v))));
     return new ScalarValue<>(newVal, newGradient);
   }
 
+
+  // FIXME
   public ScalarValue<VarKey> tanh() {
     double newVal = Math.tanh(value);
     Map<IndexedKey<VarKey>, Double> newGradient = new HashMap<>(gradient.size(), 1);
-    gradient.forEach((k, v) -> newGradient.put(k, 1 - Math.pow(Math.tanh(v), 2)));
+    gradient.forEach((k, v) -> newGradient.put(k, v * (1 - Math.pow(Math.tanh(v), 2))));
     return new ScalarValue<>(newVal, newGradient);
   }
 
@@ -186,6 +200,17 @@ public class ScalarValue<VarKey> {
 
   public String toString() {
     return "Calculation(" + value + " " + gradient.toString() + ")";
+  }
+
+  @Override
+  public Stream<KeyedDerivative<VarKey>> getKeyedDerivatives() {
+    return this.gradient.entrySet().stream()
+        .map(e -> new KeyedDerivative<>(e.getKey(), e.getValue()));
+  }
+
+  @Override
+  public int getRecursiveDepthToCache() {
+    return 1;
   }
 
 
