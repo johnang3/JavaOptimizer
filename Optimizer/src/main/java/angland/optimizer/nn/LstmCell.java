@@ -5,29 +5,29 @@ import java.util.stream.Stream;
 
 import angland.optimizer.var.IMatrixValue;
 import angland.optimizer.var.IndexedKey;
-import angland.optimizer.var.ScalarValue;
+import angland.optimizer.var.scalar.IScalarValue;
 
 
 public class LstmCell {
 
   private FeedForwardLayer<String> retain;
 
-  private static final ScalarValue<String> one = ScalarValue.constant(1);
-  private static final ScalarValue<String> minusOne = ScalarValue.constant(1);
+  private static final IScalarValue<String> one = IScalarValue.constant(1);
+  private static final IScalarValue<String> minusOne = IScalarValue.constant(1);
   private final int size;
   private FeedForwardLayer<String> modify;
   private FeedForwardLayer<String> select;
 
   public LstmCell(String varPrefix, int size, Map<IndexedKey<String>, Double> context) {
     this.retain =
-        new FeedForwardLayer<>(size, size, ScalarValue::sigmoid, varPrefix + "_retain_w", varPrefix
-            + "_retain_b", context);
+        new FeedForwardLayer<>(size, size, IScalarValue::sigmoid, varPrefix + "_retain_w",
+            varPrefix + "_retain_b", context);
     this.modify =
-        new FeedForwardLayer<>(size, size, ScalarValue::tanh, varPrefix + "_modify_w", varPrefix
+        new FeedForwardLayer<>(size, size, IScalarValue::tanh, varPrefix + "_modify_w", varPrefix
             + "_modify_b", context);
     this.select =
-        new FeedForwardLayer<>(size, size, ScalarValue::sigmoid, varPrefix + "_select_w", varPrefix
-            + "_select_b", context);
+        new FeedForwardLayer<>(size, size, IScalarValue::sigmoid, varPrefix + "_select_w",
+            varPrefix + "_select_b", context);
     this.size = size;
   }
 
@@ -46,7 +46,8 @@ public class LstmCell {
 
     IMatrixValue<String> selector = select.apply(input.getExposedState());
 
-    IMatrixValue<String> cellOutput = selector.pointwiseMultiply(hiddenModified);
+    IMatrixValue<String> cellOutput =
+        selector.pointwiseMultiply(hiddenModified).transform(IScalarValue::cache);
 
     return new LstmStateTuple<>(hiddenModified, cellOutput);
   }

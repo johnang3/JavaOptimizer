@@ -12,7 +12,8 @@ import angland.optimizer.optimizer.GradientDescentOptimizer;
 import angland.optimizer.optimizer.Range;
 import angland.optimizer.saver.StringContext;
 import angland.optimizer.var.IndexedKey;
-import angland.optimizer.var.ScalarValue;
+import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.scalar.MappedDerivativeScalar;
 
 public class NGramTrainer {
 
@@ -28,14 +29,14 @@ public class NGramTrainer {
     Map<IndexedKey<String>, Range> variableRanges = new HashMap<>();
     context.forEach((k, v) -> variableRanges.put(k, new Range(-1, 1)));
     NGramPredictor predictor = new NGramPredictor(vocabSize, lstmSize, context);
-    ScalarValue<String> cumulativeLoss = ScalarValue.constant(0);
+    IScalarValue<String> cumulativeLoss = IScalarValue.constant(0);
     long startTime = System.currentTimeMillis();
     for (int i = 0; i < trainSentences.size() / batchSize; ++i) {
       List<List<Integer>> batch = new ArrayList<>();
       for (int j = 0; j < batchSize; ++j) {
         batch.add(trainSentences.get((int) (trainSentences.size() * Math.random())));
       }
-      ScalarValue<String> loss = predictor.getBatchLoss(batch, es);
+      MappedDerivativeScalar<String> loss = predictor.getBatchLoss(batch, es);
       context = GradientDescentOptimizer.step(loss, context, variableRanges, stepDistance);
       predictor = new NGramPredictor(vocabSize, lstmSize, context);
       cumulativeLoss = cumulativeLoss.plus(loss);
@@ -45,7 +46,7 @@ public class NGramTrainer {
         System.out.println("Batch loss " + cumulativeLoss.value());
         System.out.println("Sequences per second " + sequencesPerSecond);
         StringContext.saveContext(context, contextPath);
-        cumulativeLoss = ScalarValue.constant(0);
+        cumulativeLoss = IScalarValue.constant(0);
       }
     }
 

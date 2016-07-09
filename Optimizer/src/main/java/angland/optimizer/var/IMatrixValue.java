@@ -1,13 +1,17 @@
 package angland.optimizer.var;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
 import angland.optimizer.var.ArrayMatrixValue.Builder;
+import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.scalar.MappedDerivativeScalar;
+import angland.optimizer.var.scalar.ScalarConstant;
+import angland.optimizer.var.scalar.StreamingSum;
 
 public interface IMatrixValue<VarKey> {
 
@@ -15,8 +19,7 @@ public interface IMatrixValue<VarKey> {
 
   public int getWidth();
 
-  public ScalarValue<VarKey> get(int row, int column);
-
+  public IScalarValue<VarKey> get(int row, int column);
 
   public static <VarKey> IMatrixValue<VarKey> var(VarKey key, int height, int width,
       Map<IndexedKey<VarKey>, Double> context) {
@@ -24,13 +27,13 @@ public interface IMatrixValue<VarKey> {
     for (int i = 0; i < height; ++i) {
       for (int j = 0; j < width; ++j) {
         IndexedKey<VarKey> indexedKey = IndexedKey.matrixKey(key, i, j);
-        builder.set(i, j, ScalarValue.varIndexed(indexedKey, context));
+        builder.set(i, j, IScalarValue.varIndexed(indexedKey, context));
       }
     }
     return builder.build();
   }
 
-  public static <VarKey> IMatrixValue<VarKey> repeat(ScalarValue<VarKey> val, int height, int width) {
+  public static <VarKey> IMatrixValue<VarKey> repeat(IScalarValue<VarKey> val, int height, int width) {
     ArrayMatrixValue.Builder<VarKey> builder = new ArrayMatrixValue.Builder<VarKey>(height, width);
     for (int i = 0; i < height; ++i) {
       for (int j = 0; j < width; ++j) {
@@ -40,8 +43,8 @@ public interface IMatrixValue<VarKey> {
     return builder.build();
   }
 
-  public default ScalarValue<VarKey> elementSum() {
-    ScalarValue.Builder<VarKey> sum = new ScalarValue.Builder<>(1);
+  public default MappedDerivativeScalar<VarKey> elementSum() {
+    MappedDerivativeScalar.Builder<VarKey> sum = new MappedDerivativeScalar.Builder<>(1);
     for (int i = 0; i < getHeight(); ++i) {
       for (int j = 0; j < getWidth(); ++j) {
         sum.increment(get(i, j));
@@ -51,7 +54,7 @@ public interface IMatrixValue<VarKey> {
   }
 
   public default IMatrixValue<VarKey> pointwise(IMatrixValue<VarKey> other,
-      BinaryOperator<ScalarValue<VarKey>> op) {
+      BinaryOperator<IScalarValue<VarKey>> op) {
     if (this.getHeight() != other.getHeight()) {
       throw new RuntimeException(
           "Cannot perform pointwise operations matrices of differing heights.");
@@ -69,12 +72,12 @@ public interface IMatrixValue<VarKey> {
   }
 
   public default IMatrixValue<VarKey> plus(IMatrixValue<VarKey> other) {
-    return pointwise(other, ScalarValue::plus);
+    return pointwise(other, IScalarValue::plus);
   }
 
 
   public default IMatrixValue<VarKey> pointwiseMultiply(IMatrixValue<VarKey> other) {
-    return pointwise(other, ScalarValue::times);
+    return pointwise(other, IScalarValue::times);
   }
 
   public default IMatrixValue<VarKey> columnProximity(IMatrixValue<VarKey> other) {
@@ -87,11 +90,11 @@ public interface IMatrixValue<VarKey> {
     }
     Builder<VarKey> newMatrix = new Builder<>(1, getWidth());
     for (int i = 0; i < getWidth(); ++i) {
-      ScalarValue.Builder<VarKey> builder = new ScalarValue.Builder<>(1);
+      List<IScalarValue<VarKey>> components = new ArrayList<>();
       for (int j = 0; j < getHeight(); ++j) {
-        builder.increment(this.get(j, i).minus(other.get(j, 0)).power(2));
+        components.add(this.get(j, i).minus(other.get(j, 0)).power(2));
       }
-      newMatrix.set(0, i, builder.build().power(.5));
+      newMatrix.set(0, i, new StreamingSum<>(components).power(.5).cache());
     }
     return newMatrix.build();
   }
@@ -106,10 +109,11 @@ public interface IMatrixValue<VarKey> {
     Builder<VarKey> builder = new Builder<>(this.getHeight(), other.getWidth());
     for (int i = 0; i < this.getHeight(); ++i) {
       for (int j = 0; j < other.getWidth(); ++j) {
-        ScalarValue.Builder<VarKey> sumBuilder = new ScalarValue.Builder<>(this.getWidth() * 3);
+        MappedDerivativeScalar.Builder<VarKey> sumBuilder =
+            new MappedDerivativeScalar.Builder<>(this.getWidth() * 3);
         for (int k = 0; k < this.getWidth(); ++k) {
-          ScalarValue<VarKey> left = this.get(i, k);
-          ScalarValue<VarKey> right = other.get(k, j);
+          IScalarValue<VarKey> left = this.get(i, k);
+          IScalarValue<VarKey> right = other.get(k, j);
           sumBuilder.incrementValue(left.value() * right.value());
 
           for (Map.Entry<IndexedKey<VarKey>, Double> entry : left.getGradient().entrySet()) {
@@ -137,19 +141,63 @@ public interface IMatrixValue<VarKey> {
     return new TransposeView<>(this);
   }
 
+  /**
+   * 
+   * Return a new matrix where all values are rows are multiplied by zero except for the provided
+   * index, and an additional provided number of randomly selected indices.
+   * 
+   * @return
+   */
+  public default ArrayMatrixValue<VarKey> selectAndSampleRows(int forcedIndex, int sampleCount) {
+    if (forcedIndex < 0 || forcedIndex >= getHeight()) {
+      throw new IllegalArgumentException("Forced index out of range: " + forcedIndex);
+    }
+    if (sampleCount < 0) {
+      throw new IllegalArgumentException("Sample count cannot be negative");
+    }
+    if (sampleCount > getHeight() - 1) {
+      throw new IllegalArgumentException("Sample count cannot be greater than height-1");
+    }
+    ArrayMatrixValue.Builder<VarKey> builder = new ArrayMatrixValue.Builder<>(getHeight(), 1);
+    IScalarValue<VarKey> zero = IScalarValue.constant(0);
+    for (int i = 0; i < getHeight(); ++i) {
+      for (int j = 0; j < getWidth(); ++j) {
+        builder.set(i, j, zero);
+      }
+    }
+    for (int i = 0; i < getWidth(); ++i) {
+      builder.set(forcedIndex, i, get(forcedIndex, i));
+    }
+    List<Integer> availableIndices = new ArrayList<>(this.getHeight() - 1);
+    for (int i = 0; i < getHeight(); ++i) {
+      if (i != forcedIndex) {
+        availableIndices.add(i);
+      }
+    }
+    Collections.shuffle(availableIndices);
+    for (int i = 0; i < sampleCount; ++i) {
+      int row = availableIndices.get(i);
+      for (int j = 0; j < getWidth(); ++j) {
+        builder.set(row, j, get(row, j));
+      }
+    }
+    return builder.build();
+  }
+
   public default ArrayMatrixValue<VarKey> softmax() {
     if (getWidth() != 1) {
       throw new RuntimeException("Softmax supported only on matrices of width 1.");
     }
-    List<ScalarValue<VarKey>> exp = new ArrayList<>();
+    List<IScalarValue<VarKey>> exp = new ArrayList<>();
     for (int i = 0; i < getHeight(); ++i) {
       exp.add(get(i, 0).exp());
     }
-    ScalarValue.Builder<VarKey> sumBuilder = new ScalarValue.Builder<>(exp.size());
-    for (ScalarValue<VarKey> calc : exp) {
-      sumBuilder.increment(calc);
+    List<IScalarValue<VarKey>> denomComponents = new ArrayList<>();
+
+    for (IScalarValue<VarKey> calc : exp) {
+      denomComponents.add(calc);
     }
-    ScalarValue<VarKey> sum = sumBuilder.build();
+    IScalarValue<VarKey> sum = new StreamingSum<>(denomComponents).cache();
     Builder<VarKey> resultBuilder = new Builder<>(getHeight(), 1);
     for (int i = 0; i < exp.size(); ++i) {
       resultBuilder.set(i, 0, exp.get(i).divide(sum));
@@ -157,7 +205,7 @@ public interface IMatrixValue<VarKey> {
     return resultBuilder.build();
   }
 
-  public default ScalarValue<VarKey> maxIdx() {
+  public default IScalarValue<VarKey> maxIdx() {
     if (this.getWidth() != 1) {
       throw new RuntimeException("getMaxRowValue may only be used on 1-width matrices.");
     }
@@ -170,11 +218,11 @@ public interface IMatrixValue<VarKey> {
         maxIdx = i;
       }
     }
-    return new ScalarValue<>(maxIdx, new HashMap<>());
+    return new ScalarConstant<>(maxIdx);
   }
 
   public default IMatrixValue<VarKey> transform(
-      Function<ScalarValue<VarKey>, ScalarValue<VarKey>> transform) {
+      Function<IScalarValue<VarKey>, IScalarValue<VarKey>> transform) {
     ArrayMatrixValue.Builder<VarKey> builder =
         new ArrayMatrixValue.Builder<>(getHeight(), getWidth());
     for (int i = 0; i < getHeight(); ++i) {
@@ -190,14 +238,14 @@ public interface IMatrixValue<VarKey> {
         new ArrayMatrixValue.Builder<>(getHeight(), getWidth());
     for (int i = 0; i < getHeight(); ++i) {
       for (int j = 0; j < getWidth(); ++j) {
-        ScalarValue<VarKey> c = ScalarValue.constant(this.get(i, j).value());
+        IScalarValue<VarKey> c = IScalarValue.constant(this.get(i, j).value());
         builder.set(i, j, c);
       }
     }
     return builder.build();
   }
 
-  public default IMatrixValue<VarKey> getColumn(ScalarValue<VarKey> column) {
+  public default IMatrixValue<VarKey> getColumn(IScalarValue<VarKey> column) {
     return new MatrixRangeView<>(this, 0, (int) column.value(), getHeight(), 1);
   }
 }

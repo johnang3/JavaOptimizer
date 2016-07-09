@@ -1,21 +1,23 @@
 package angland.optimizer.var;
 
+import angland.optimizer.var.scalar.IScalarValue;
 
 
-public class ArrayMatrixValue<VarKey> extends MatrixBase<ScalarValue<VarKey>>
+
+public class ArrayMatrixValue<VarKey> extends MatrixBase<IScalarValue<VarKey>>
     implements
       IMatrixValue<VarKey> {
 
-  private final ScalarValue<VarKey>[] values;
+  private final IScalarValue<VarKey>[] values;
 
 
-  protected ArrayMatrixValue(int height, int width, ScalarValue<VarKey>[] values) {
+  protected ArrayMatrixValue(int height, int width, IScalarValue<VarKey>[] values) {
     super(height, width);
     this.values = values;
   }
 
   @Override
-  protected ScalarValue<VarKey>[] values() {
+  protected IScalarValue<VarKey>[] values() {
     return values;
   }
 
@@ -35,7 +37,7 @@ public class ArrayMatrixValue<VarKey> extends MatrixBase<ScalarValue<VarKey>>
     return newMatrix.build();
   }
 
-  public static <VarKey> ArrayMatrixValue<VarKey> times(ScalarValue<VarKey> scalar,
+  public static <VarKey> ArrayMatrixValue<VarKey> times(IScalarValue<VarKey> scalar,
       IMatrixValue<VarKey> matrix) {
     Builder<VarKey> newMatrix = new Builder<>(matrix.getHeight(), matrix.getWidth());
     for (int i = 0; i < matrix.getHeight(); ++i) {
@@ -46,22 +48,22 @@ public class ArrayMatrixValue<VarKey> extends MatrixBase<ScalarValue<VarKey>>
     return newMatrix.build();
   }
 
-  public static class Builder<VarKey> extends MatrixBase<ScalarValue<VarKey>> {
+  public static class Builder<VarKey> extends MatrixBase<IScalarValue<VarKey>> {
 
-    protected final ScalarValue<VarKey>[] values;
+    protected final IScalarValue<VarKey>[] values;
 
     @SuppressWarnings("unchecked")
     public Builder(int height, int width) {
       super(height, width);
-      this.values = (ScalarValue<VarKey>[]) new ScalarValue[height * width];
+      this.values = (IScalarValue<VarKey>[]) new IScalarValue[height * width];
     }
 
     @Override
-    protected ScalarValue<VarKey>[] values() {
+    protected IScalarValue<VarKey>[] values() {
       return values;
     }
 
-    public void set(int row, int column, ScalarValue<VarKey> calc) {
+    public void set(int row, int column, IScalarValue<VarKey> calc) {
       validateCoords(row, column);
       values()[column + getWidth() * row] = calc;
     }

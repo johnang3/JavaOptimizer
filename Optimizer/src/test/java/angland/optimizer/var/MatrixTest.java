@@ -8,6 +8,8 @@ import java.util.Map;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import angland.optimizer.var.scalar.IScalarValue;
+
 public class MatrixTest {
 
   private static final double TOLERANCE = 10e-3;
@@ -65,6 +67,57 @@ public class MatrixTest {
   }
 
   @Test
+  public void testChooseAndRandom() {
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    int rowCount = 25;
+    int forcedIndex = 5;
+    int sampleCount = 9;
+    for (int i = 0; i < rowCount; ++i) {
+      context.put(IndexedKey.matrixKey("m", i, 0), (double) i + 1);
+    }
+    IMatrixValue<String> m = IMatrixValue.var("m", rowCount, 1, context);
+    IMatrixValue<String> sample = m.selectAndSampleRows(forcedIndex, sampleCount);
+    assertEquals(forcedIndex + 1, sample.get(forcedIndex, 0).value(), TOLERANCE);
+    int nonZeroCount = 0;
+    for (int i = 0; i < rowCount; ++i) {
+      if (i != forcedIndex) {
+        double value = sample.get(i, 0).value();
+        if (value != 0) {
+          ++nonZeroCount;
+          assertEquals(i + 1, value, TOLERANCE);
+        }
+      }
+    }
+    assertEquals(sampleCount, nonZeroCount);
+  }
+
+
+  @Test
+  public void testSampleZero() {
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    int rowCount = 25;
+    int forcedIndex = 5;
+    int sampleCount = 0;
+    for (int i = 0; i < rowCount; ++i) {
+      context.put(IndexedKey.matrixKey("m", i, 0), (double) i + 1);
+    }
+    IMatrixValue<String> m = IMatrixValue.var("m", rowCount, 1, context);
+    IMatrixValue<String> sample = m.selectAndSampleRows(forcedIndex, sampleCount);
+    assertEquals(forcedIndex + 1, sample.get(forcedIndex, 0).value(), TOLERANCE);
+    int nonZeroCount = 0;
+    for (int i = 0; i < rowCount; ++i) {
+      if (i != forcedIndex) {
+        double value = sample.get(i, 0).value();
+        if (value != 0) {
+          ++nonZeroCount;
+          assertEquals(i + 1, value, TOLERANCE);
+        }
+      }
+    }
+    assertEquals(sampleCount, nonZeroCount);
+  }
+
+  @Test
   public void testScalarTimesMatrix() {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
 
@@ -73,7 +126,7 @@ public class MatrixTest {
     context.put(IndexedKey.matrixKey("m", 1, 0), 4.0);
     context.put(IndexedKey.matrixKey("m", 1, 1), 5.0);
     IMatrixValue<String> matrix = IMatrixValue.var("m", 2, 2, context);
-    ScalarValue<String> scalar = ScalarValue.constant(3);
+    IScalarValue<String> scalar = IScalarValue.constant(3);
     IMatrixValue<String> product = scalar.times(matrix);
     assertEquals(2, product.getHeight());
     assertEquals(2, product.getWidth());
@@ -130,7 +183,7 @@ public class MatrixTest {
     context.put(IndexedKey.matrixKey("a", 1, 0), 6.0);
     context.put(IndexedKey.matrixKey("a", 2, 0), 4.0);
     IMatrixValue<String> a = IMatrixValue.var("a", 3, 1, context);
-    ScalarValue<String> maxIdx = a.maxIdx();
+    IScalarValue<String> maxIdx = a.maxIdx();
     assertEquals(1, maxIdx.value(), TOLERANCE);
   }
 
@@ -158,7 +211,7 @@ public class MatrixTest {
 
 
   @Test
-  public void vectorTimeMatrixPerformanceTest() {
+  public void vectorTimesMatrixPerformanceTest() {
     int size = 200;
 
     Map<IndexedKey<String>, Double> context = new HashMap<>();
@@ -176,7 +229,7 @@ public class MatrixTest {
     }
     long start = System.currentTimeMillis();
     // run
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 60; ++i) {
       left.times(right);
     }
     long end = System.currentTimeMillis();
@@ -193,7 +246,7 @@ public class MatrixTest {
     context.put(IndexedKey.matrixKey("m", 2, 0), 7.0);
     context.put(IndexedKey.matrixKey("m", 2, 1), 8.0);
     IMatrixValue<String> matrix = IMatrixValue.var("m", 3, 2, context);
-    IMatrixValue<String> col = matrix.getColumn(ScalarValue.constant(1));
+    IMatrixValue<String> col = matrix.getColumn(IScalarValue.constant(1));
     assertEquals(1, col.getWidth());
     assertEquals(3, col.getHeight());
     assertEquals(2.0, col.get(0, 0).value(), TOLERANCE);

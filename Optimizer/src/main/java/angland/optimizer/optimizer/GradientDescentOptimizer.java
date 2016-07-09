@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import angland.optimizer.var.IndexedKey;
-import angland.optimizer.var.ScalarValue;
+import angland.optimizer.var.scalar.IScalarValue;
 
 
 public class GradientDescentOptimizer {
@@ -18,7 +18,7 @@ public class GradientDescentOptimizer {
    * @return
    */
   public static <Result, VarType> Map<IndexedKey<VarType>, Double> step(
-      ScalarValue<VarType> calculation, Map<IndexedKey<VarType>, Double> context,
+      IScalarValue<VarType> calculation, Map<IndexedKey<VarType>, Double> context,
       Map<IndexedKey<VarType>, Range> variableRanges, double gradientMultiplier) {
     if (gradientMultiplier <= 0) {
       throw new RuntimeException("MaxStepDistance must be greater than 0.");
@@ -46,7 +46,7 @@ public class GradientDescentOptimizer {
 
   public static <Result, VarKey> Solution<Result, VarKey> stepToMinimum(
       Function<Map<IndexedKey<VarKey>, Double>, Result> getResult,
-      Function<Result, ScalarValue<VarKey>> getObjective,
+      Function<Result, IScalarValue<VarKey>> getObjective,
       Map<IndexedKey<VarKey>, Range> variableRanges,
       Map<IndexedKey<VarKey>, Double> initialContext, double step, double minStep) {
     Solution<Result, VarKey> bestResult = new Solution<>(initialContext, getResult, getObjective);

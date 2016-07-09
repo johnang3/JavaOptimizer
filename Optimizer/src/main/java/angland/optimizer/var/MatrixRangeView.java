@@ -1,5 +1,6 @@
 package angland.optimizer.var;
 
+import angland.optimizer.var.scalar.IScalarValue;
 
 public class MatrixRangeView<VarKey> implements IMatrixValue<VarKey> {
 
@@ -38,7 +39,7 @@ public class MatrixRangeView<VarKey> implements IMatrixValue<VarKey> {
   }
 
   @Override
-  public ScalarValue<VarKey> get(int row, int column) {
+  public IScalarValue<VarKey> get(int row, int column) {
     return source.get(startRow + row, startCol + column);
   }
 

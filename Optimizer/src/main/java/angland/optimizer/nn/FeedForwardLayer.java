@@ -6,7 +6,7 @@ import java.util.stream.Stream;
 
 import angland.optimizer.var.IMatrixValue;
 import angland.optimizer.var.IndexedKey;
-import angland.optimizer.var.ScalarValue;
+import angland.optimizer.var.scalar.IScalarValue;
 
 public class FeedForwardLayer<VarKey> {
 
@@ -14,10 +14,10 @@ public class FeedForwardLayer<VarKey> {
   private final int outputSize;
   private final IMatrixValue<VarKey> weights;
   private final IMatrixValue<VarKey> biases;
-  private final Function<ScalarValue<VarKey>, ScalarValue<VarKey>> transformation;
+  private final Function<IScalarValue<VarKey>, IScalarValue<VarKey>> transformation;
 
   public FeedForwardLayer(int inputSize, int outputSize,
-      Function<ScalarValue<VarKey>, ScalarValue<VarKey>> transformation, VarKey weightKey,
+      Function<IScalarValue<VarKey>, IScalarValue<VarKey>> transformation, VarKey weightKey,
       VarKey biasKey, Map<IndexedKey<VarKey>, Double> context) {
     super();
     this.inputSize = inputSize;

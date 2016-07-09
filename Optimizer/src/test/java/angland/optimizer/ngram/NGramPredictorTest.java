@@ -10,7 +10,7 @@ import org.junit.Test;
 import angland.optimizer.optimizer.GradientDescentOptimizer;
 import angland.optimizer.optimizer.Range;
 import angland.optimizer.var.IndexedKey;
-import angland.optimizer.var.ScalarValue;
+import angland.optimizer.var.scalar.IScalarValue;
 
 public class NGramPredictorTest {
 
@@ -46,11 +46,11 @@ public class NGramPredictorTest {
     input.add(1);
     input.add(1);
     input.add(1);
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 50; ++i) {
       System.out.println(predictor.predictNext(input, 5));
-      ScalarValue<String> loss = predictor.getLoss(input);
-      System.out.println(loss);
-      context = GradientDescentOptimizer.step(loss, context, variableRanges, 5);
+      IScalarValue<String> loss = predictor.getLoss(input);
+      System.out.println(loss.value());
+      context = GradientDescentOptimizer.step(loss, context, variableRanges, 1);
       predictor = new NGramPredictor(8, 6, context);
     }
   }

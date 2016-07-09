@@ -24,7 +24,7 @@ public class LstmDemoTrainer {
   public static void train(String vocabFile, String trainFile, String contextFile)
       throws IOException {
     int vocabSize = 500;
-    int lstmSize = 10;
+    int lstmSize = 50;
     List<String> vocabTokens = new ArrayList<>();
     vocabTokens.add("<unk>");
     try (FileReader fr = new FileReader(vocabFile); BufferedReader br = new BufferedReader(fr)) {

@@ -4,16 +4,16 @@ import java.util.Map;
 import java.util.function.Function;
 
 import angland.optimizer.var.IndexedKey;
-import angland.optimizer.var.ScalarValue;
+import angland.optimizer.var.scalar.IScalarValue;
 
 public class Solution<Result, VarType> {
 
   private final Map<IndexedKey<VarType>, Double> context;
   private final Result result;
-  private final ScalarValue<VarType> objective;
+  private final IScalarValue<VarType> objective;
 
   public Solution(Map<IndexedKey<VarType>, Double> context, Result result,
-      ScalarValue<VarType> objective) {
+      IScalarValue<VarType> objective) {
     super();
     this.context = context;
     this.result = result;
@@ -22,7 +22,7 @@ public class Solution<Result, VarType> {
 
   public Solution(Map<IndexedKey<VarType>, Double> context,
       Function<Map<IndexedKey<VarType>, Double>, Result> getResult,
-      Function<Result, ScalarValue<VarType>> getObjective) {
+      Function<Result, IScalarValue<VarType>> getObjective) {
     super();
     this.context = context;
     this.result = getResult.apply(context);
@@ -38,7 +38,7 @@ public class Solution<Result, VarType> {
     return result;
   }
 
-  public ScalarValue<VarType> getObjective() {
+  public IScalarValue<VarType> getObjective() {
     return objective;
   }
 
