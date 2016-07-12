@@ -81,6 +81,15 @@ public interface IMatrixValue<VarKey> {
   }
 
   public default IMatrixValue<VarKey> columnProximity(IMatrixValue<VarKey> other) {
+    List<Integer> list = new ArrayList<>();
+    for (int i = 0; i < getWidth(); ++i) {
+      list.add(i);
+    }
+    return columnProximity(other, list);
+  }
+
+  public default IMatrixValue<VarKey> columnProximity(IMatrixValue<VarKey> other,
+      List<Integer> selectedIndices) {
     if (this.getHeight() != other.getHeight()) {
       throw new IllegalArgumentException("Cannot compare columns in matrices of differing heights");
     }
@@ -90,16 +99,39 @@ public interface IMatrixValue<VarKey> {
     }
     Builder<VarKey> newMatrix = new Builder<>(1, getWidth());
     for (int i = 0; i < getWidth(); ++i) {
-      List<IScalarValue<VarKey>> components = new ArrayList<>();
+      newMatrix.set(0, i, IScalarValue.constant(Double.MAX_VALUE));
+    }
+    for (int i : selectedIndices) {
+      List<IScalarValue<VarKey>> components = new ArrayList<>(getWidth());
       for (int j = 0; j < getHeight(); ++j) {
         components.add(this.get(j, i).minus(other.get(j, 0)).power(2));
       }
       newMatrix.set(0, i, new StreamingSum<>(components).power(.5).cache());
+      // KeyedDerivative.printRelativeDist(newMatrix.get(0, i).getGradient());
     }
     return newMatrix.build();
   }
 
-
+  public default IMatrixValue<VarKey> sampledColumnProximity(IMatrixValue<VarKey> other,
+      int requiredIndex, int samples) {
+    if (samples > getWidth()) {
+      throw new IllegalArgumentException("Samples out of range: " + samples);
+    }
+    List<Integer> available = new ArrayList<>();
+    for (int i = 0; i < getWidth(); ++i) {
+      if (i != requiredIndex) {
+        available.add(i);
+      }
+    }
+    Collections.shuffle(available);
+    List<Integer> selected = new ArrayList<>(samples + 1);
+    for (int i = 0; i < samples; ++i) {
+      selected.add(available.get(i));
+    }
+    selected.add(requiredIndex);
+    IMatrixValue<VarKey> m = columnProximity(other, selected);
+    return m;
+  }
 
   public default IMatrixValue<VarKey> times(IMatrixValue<VarKey> other) {
     if (this.getWidth() != other.getHeight()) {

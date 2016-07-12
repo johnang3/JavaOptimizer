@@ -30,7 +30,7 @@ public class StringContext {
             for (int i = 1; i < split.length - 1; ++i) {
               indices.add(Integer.parseInt(split[i]));
             }
-            context.put(new IndexedKey<String>(key, indices),
+            context.put(new IndexedKey<String>(key, indices.get(0), indices.get(1)),
                 Double.parseDouble(split[split.length - 1]));
           });
     } catch (NumberFormatException | IOException e) {
@@ -48,9 +48,8 @@ public class StringContext {
       context.forEach((k, v) -> {
         StringBuilder sb = new StringBuilder();
         sb.append(k.getVarKey() + " ");
-        for (int i : k.getIndices()) {
-          sb.append(i + " ");
-        }
+        sb.append(k.getRow() + " ");
+        sb.append(k.getCol() + " ");
         sb.append(v);
         pw.println(sb.toString());
       });

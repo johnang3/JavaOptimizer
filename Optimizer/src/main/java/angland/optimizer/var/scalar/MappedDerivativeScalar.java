@@ -43,22 +43,6 @@ public class MappedDerivativeScalar<VarKey> implements IScalarValue<VarKey> {
 
 
 
-  @SuppressWarnings("unchecked")
-  public static <VarKey> MappedDerivativeScalar<VarKey> sum(MappedDerivativeScalar<VarKey>... args) {
-    if (args.length == 0) {
-      throw new IllegalArgumentException("Cannot take the sum of zero elements.");
-    }
-    double newVal = 0;
-    Map<IndexedKey<VarKey>, Double> newGrad = new HashMap<>();
-    Consumer<Map.Entry<IndexedKey<VarKey>, Double>> accumulator =
-        entry -> newGrad.merge(entry.getKey(), entry.getValue(), Double::sum);
-    for (MappedDerivativeScalar<VarKey> calc : args) {
-      newVal += calc.value();
-      calc.getGradient().entrySet().forEach(accumulator);
-    }
-    return new MappedDerivativeScalar<>(newVal, newGrad);
-  }
-
   public static class Builder<VarKey> {
     private double value = 0;
     private final Map<IndexedKey<VarKey>, Double> gradient;

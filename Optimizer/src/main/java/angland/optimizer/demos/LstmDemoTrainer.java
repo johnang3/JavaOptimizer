@@ -23,8 +23,12 @@ public class LstmDemoTrainer {
 
   public static void train(String vocabFile, String trainFile, String contextFile)
       throws IOException {
-    int vocabSize = 500;
-    int lstmSize = 50;
+    int vocabSize = 10000;
+    int lstmSize = 200;
+    int samples = 10;
+    int batchSize = 10;
+    int saveInterval = 1;
+    double gradientClipThreshold = 0.2;
     List<String> vocabTokens = new ArrayList<>();
     vocabTokens.add("<unk>");
     try (FileReader fr = new FileReader(vocabFile); BufferedReader br = new BufferedReader(fr)) {
@@ -64,7 +68,8 @@ public class LstmDemoTrainer {
     ExecutorService es = null;
     try {
       es = Executors.newFixedThreadPool(4);
-      NGramTrainer.train(es, trainSentences, new File(contextFile), vocabSize, lstmSize, 1, 1, 5);
+      NGramTrainer.train(es, trainSentences, new File(contextFile), vocabSize, lstmSize, batchSize,
+          saveInterval, 5, samples, gradientClipThreshold);
     } finally {
       if (es != null) {
         es.shutdown();

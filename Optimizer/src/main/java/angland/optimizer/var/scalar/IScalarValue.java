@@ -88,7 +88,7 @@ public interface IScalarValue<VarKey> {
     return new StreamingProduct<>(this, other.power(-1));
   }
 
-  public default MappedDerivativeScalar<VarKey> cache() {
+  public default IScalarValue<VarKey> cache() {
     return new MappedDerivativeScalar<>(value(), getGradient());
   }
 
@@ -99,6 +99,10 @@ public interface IScalarValue<VarKey> {
 
   public default IMatrixValue<VarKey> times(IMatrixValue<VarKey> matrix) {
     return matrix.transform(i -> i.times(this));
+  }
+
+  public default IScalarValue<VarKey> clipGradient(double cutoff) {
+    return new ClippedGradientScalar<>(this, cutoff);
   }
 
 }

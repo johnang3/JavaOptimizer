@@ -1,7 +1,10 @@
 package angland.optimizer.vec;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -85,5 +88,16 @@ public class MathUtils {
 
   public static double sigmoid(double x) {
     return 1.0 / (1 + Math.exp(-x));
+  }
+
+
+  public static <VarKey> void printDistInfo(Map<VarKey, Double> m) {
+    List<Double> list = new ArrayList<>();
+    m.forEach((k, v) -> list.add(Math.abs(v)));
+    Collections.sort(list);
+    int slices = 10;
+    for (int i = 0; i < slices; ++i) {
+      System.out.println("Slice " + i + " value:" + list.get(i * (list.size() / slices)));
+    }
   }
 }

@@ -9,11 +9,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 
-public class ObjectToFloatMapTest {
+public class ObjectToDoubleMapTest {
 
   @Test
   public void testPutAndGet() {
-    ObjectToFloatMap<String> m = new ObjectToFloatMap<String>(1, .75);
+    ObjectToDoubleMap<String> m = new ObjectToDoubleMap<String>(1, .75);
     m.put("a", 1.0f);
     m.put("b", 2.0f);
     m.put("c", 3.0f);
@@ -30,16 +30,16 @@ public class ObjectToFloatMapTest {
 
   @Test
   public void testCloneWithMultiplier() {
-    ObjectToFloatMap<String> m = new ObjectToFloatMap<String>(3);
+    ObjectToDoubleMap<String> m = new ObjectToDoubleMap<String>(3);
     m.put("a", 10);
-    ObjectToFloatMap<String> tripled = m.cloneWithMultiplier(3);
+    ObjectToDoubleMap<String> tripled = m.cloneWithMultiplier(3);
     assertEquals(tripled.size(), 1);
     assertEquals(30, tripled.get("a"), 0.0);
   }
 
   @Test
   public void testIncrement() {
-    ObjectToFloatMap<String> m = new ObjectToFloatMap<>(1, .75);
+    ObjectToDoubleMap<String> m = new ObjectToDoubleMap<>(1, .75);
     for (int i = 0; i < 100; ++i) {
       m.adjust("a", 1.0f);
     }
@@ -50,7 +50,7 @@ public class ObjectToFloatMapTest {
   @Test
   public void performanceTestRepeatedInsert() {
     long start = System.currentTimeMillis();
-    ObjectToFloatMap<Integer> s = new ObjectToFloatMap<>(1, .75);
+    ObjectToDoubleMap<Integer> s = new ObjectToDoubleMap<>(1, .75);
     for (int i = 0; i < 10e8; ++i) {
       s.put(1, 2);
     }
@@ -62,7 +62,7 @@ public class ObjectToFloatMapTest {
   @Test
   public void performanceTestRepeatedMerge() {
     long start = System.currentTimeMillis();
-    ObjectToFloatMap<Integer> s = new ObjectToFloatMap<>(1, .75);
+    ObjectToDoubleMap<Integer> s = new ObjectToDoubleMap<>(1, .75);
     for (int i = 0; i < 10e8; ++i) {
       s.adjust(1, 2);
     }

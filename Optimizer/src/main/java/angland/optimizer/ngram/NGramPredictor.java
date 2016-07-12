@@ -23,7 +23,7 @@ public class NGramPredictor {
   private final Map<IndexedKey<String>, Double> context;
   private final IMatrixValue<String> embedding;
   private final LstmCell cell;
-  private final IScalarValue<String> one = IScalarValue.constant(1);
+  private final double gradientClipThreshold;
 
   public static Map<IndexedKey<String>, Double> randomizedContext(int vocabulary, int lstmSize) {
     Map<IndexedKey<String>, Double> map = new HashMap<>();
@@ -36,10 +36,12 @@ public class NGramPredictor {
         LstmCell.getKeys("cell", lstmSize));
   }
 
-  public NGramPredictor(int vocabulary, int lstmSize, Map<IndexedKey<String>, Double> context) {
+  public NGramPredictor(int vocabulary, int lstmSize, Map<IndexedKey<String>, Double> context,
+      double gradientClipThreshold) {
     this.embedding = IMatrixValue.var("embedding", lstmSize, vocabulary, context);
-    this.cell = new LstmCell("cell", lstmSize, context);
+    this.cell = new LstmCell("cell", lstmSize, context, gradientClipThreshold);
     this.context = context;
+    this.gradientClipThreshold = gradientClipThreshold;
   }
 
   public Map<IndexedKey<String>, Double> getContext() {
@@ -75,7 +77,7 @@ public class NGramPredictor {
     return outputs;
   }
 
-  public IScalarValue<String> getLoss(List<Integer> inputInts) {
+  public IScalarValue<String> getLoss(List<Integer> inputInts, int samples) {
     if (inputInts.size() < 2) {
       throw new IllegalArgumentException("Can only compute loss on at least two elements.");
     }
@@ -91,8 +93,8 @@ public class NGramPredictor {
       LstmStateTuple<String> outputState = cell.apply(inputState);
       hiddenState = outputState.getHiddenState();
       IMatrixValue<String> softmax =
-          embedding.columnProximity(outputState.getExposedState()).transform(v -> v.power(-1))
-              .transpose().selectAndSampleRows(output, 1).softmax();
+          embedding.sampledColumnProximity(outputState.getExposedState(), output, samples)
+              .transform(v -> v.power(-1)).transpose().softmax();
       ArrayMatrixValue.Builder<String> targetBuilder =
           new ArrayMatrixValue.Builder<>(embedding.getWidth(), 1);
       for (int j = 0; j < embedding.getWidth(); ++j) {
@@ -100,14 +102,7 @@ public class NGramPredictor {
       }
       IMatrixValue<String> target = targetBuilder.build();
       IMatrixValue<String> crossEntropy = softmax.pointwise(target, (a, b) -> b.times(a.ln()));
-      /*
-       * StringBuilder sb = new StringBuilder("Target: "); StringBuilder sb2 = new
-       * StringBuilder("Softmax: "); StringBuilder sb3 = new StringBuilder("CrossEntropy: "); for
-       * (int j = 0; j < target.getHeight(); ++j) { sb.append(target.get(j, 0).value() + ", ");
-       * sb2.append(softmax.get(j, 0).value() + ", "); sb3.append(crossEntropy.get(j, 0).value() +
-       * ", "); } System.out.println(sb.toString()); System.out.println(sb2.toString());
-       * System.out.println(sb3.toString());
-       */
+
       lossBuilder.increment(crossEntropy.get(output, 0).divide(
           IScalarValue.constant(target.getHeight())));
     }
@@ -116,15 +111,15 @@ public class NGramPredictor {
   }
 
   public MappedDerivativeScalar<String> getBatchLoss(Collection<List<Integer>> inputs,
-      ExecutorService es) {
+      ExecutorService es, int samples) {
     List<Callable<IScalarValue<String>>> losses = new ArrayList<>();
-    inputs.forEach(input -> losses.add(() -> getLoss(input)));
+    inputs.forEach(input -> losses.add(() -> getLoss(input, samples)));
     try {
 
       MappedDerivativeScalar.Builder<String> resultBuilder =
           new MappedDerivativeScalar.Builder<>(cell.getSize() + embedding.getWidth()
               * embedding.getHeight());
-      inputs.forEach(input -> resultBuilder.increment(getLoss(input)));
+      inputs.forEach(input -> resultBuilder.increment(getLoss(input, samples)));
       return resultBuilder.build();
     } catch (Exception e) {
       throw new RuntimeException(e);

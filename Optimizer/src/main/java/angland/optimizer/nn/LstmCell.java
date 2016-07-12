@@ -17,17 +17,20 @@ public class LstmCell {
   private final int size;
   private FeedForwardLayer<String> modify;
   private FeedForwardLayer<String> select;
+  private final double gradientClipThreshold;
 
-  public LstmCell(String varPrefix, int size, Map<IndexedKey<String>, Double> context) {
+  public LstmCell(String varPrefix, int size, Map<IndexedKey<String>, Double> context,
+      double gradientClipThreshold) {
     this.retain =
-        new FeedForwardLayer<>(size, size, IScalarValue::sigmoid, varPrefix + "_retain_w",
-            varPrefix + "_retain_b", context);
+        new FeedForwardLayer<>(size, size, v -> v.sigmoid().clipGradient(gradientClipThreshold),
+            varPrefix + "_retain_w", varPrefix + "_retain_b", context);
     this.modify =
-        new FeedForwardLayer<>(size, size, IScalarValue::tanh, varPrefix + "_modify_w", varPrefix
-            + "_modify_b", context);
+        new FeedForwardLayer<>(size, size, v -> v.tanh().clipGradient(gradientClipThreshold),
+            varPrefix + "_modify_w", varPrefix + "_modify_b", context);
     this.select =
-        new FeedForwardLayer<>(size, size, IScalarValue::sigmoid, varPrefix + "_select_w",
-            varPrefix + "_select_b", context);
+        new FeedForwardLayer<>(size, size, v -> v.sigmoid().clipGradient(gradientClipThreshold),
+            varPrefix + "_select_w", varPrefix + "_select_b", context);
+    this.gradientClipThreshold = gradientClipThreshold;
     this.size = size;
   }
 
@@ -46,10 +49,10 @@ public class LstmCell {
 
     IMatrixValue<String> selector = select.apply(input.getExposedState());
 
-    IMatrixValue<String> cellOutput =
-        selector.pointwiseMultiply(hiddenModified).transform(IScalarValue::cache);
+    IMatrixValue<String> cellOutput = selector.pointwiseMultiply(hiddenModified);
 
-    return new LstmStateTuple<>(hiddenModified, cellOutput);
+    return new LstmStateTuple<>(hiddenModified.transform(IScalarValue::cache),
+        cellOutput.transform(x -> x.clipGradient(gradientClipThreshold)));
   }
 
   public int getSize() {

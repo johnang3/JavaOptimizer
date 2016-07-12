@@ -1,25 +1,23 @@
 package angland.optimizer.var;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class IndexedKey<VarKey> {
 
   private final VarKey varKey;
-  private final List<Integer> indices;
+  private final int row;
+  private final int col;
   private final int hashCode;
 
 
   public static <VarKey> IndexedKey<VarKey> scalarKey(VarKey varKey) {
-    return new IndexedKey<>(varKey, Collections.unmodifiableList(new ArrayList<>(0)));
+    return new IndexedKey<>(varKey, -1, -1);
   }
 
   public static <VarKey> IndexedKey<VarKey> matrixKey(VarKey varKey, int row, int col) {
-    List<Integer> dim = new ArrayList<>();
-    dim.add(row);
-    dim.add(col);
-    return new IndexedKey<>(varKey, Collections.unmodifiableList(dim));
+
+    return new IndexedKey<>(varKey, row, col);
   }
 
   public static <VarKey> List<IndexedKey<VarKey>> getAllMatrixKeys(VarKey varKey, int height,
@@ -33,18 +31,16 @@ public class IndexedKey<VarKey> {
     return varKeys;
   }
 
-  public IndexedKey(VarKey varKey, List<Integer> indices) {
+  public IndexedKey(VarKey varKey, int row, int col) {
     super();
     this.varKey = varKey;
-    this.indices = indices;
+    this.row = row;
+    this.col = col;
     final int prime = 631;
     int result = 1;
     result = prime * result + ((varKey == null) ? 0 : varKey.hashCode());
-    if (indices != null) {
-      for (int i = 0; i < indices.size(); ++i) {
-        result = prime * result + indices.get(i);
-      }
-    }
+    result = prime * result + row;
+    result = prime * result + col;
     this.hashCode = result;
   }
 
@@ -52,8 +48,12 @@ public class IndexedKey<VarKey> {
     return varKey;
   }
 
-  public List<Integer> getIndices() {
-    return indices;
+  public int getRow() {
+    return row;
+  }
+
+  public int getCol() {
+    return col;
   }
 
   @Override
@@ -68,9 +68,8 @@ public class IndexedKey<VarKey> {
     if (getClass() != obj.getClass()) return false;
     @SuppressWarnings("rawtypes")
     IndexedKey other = (IndexedKey) obj;
-    if (indices == null) {
-      if (other.indices != null) return false;
-    } else if (!indices.equals(other.indices)) return false;
+    if (hashCode != other.hashCode) return false;
+    if (row != other.row) return false;
     if (varKey == null) {
       if (other.varKey != null) return false;
     } else if (!varKey.equals(other.varKey)) return false;
@@ -78,7 +77,7 @@ public class IndexedKey<VarKey> {
   }
 
   public String toString() {
-    return "(" + varKey + " " + indices + ")";
+    return "(" + varKey + " " + row + " " + col + ")";
   }
 
 

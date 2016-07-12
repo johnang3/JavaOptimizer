@@ -28,7 +28,7 @@ public class LstmCellTest {
             .getAllMatrixKeys("exposed", 5, 1).stream())).forEach(k -> {
       context.put(k, Math.random() * 2 - 1);
     });
-    LstmCell lstmCell = new LstmCell("cell", 5, context);
+    LstmCell lstmCell = new LstmCell("cell", 5, context, 0);
     IMatrixValue<String> inHidden = IMatrixValue.var("hidden", 5, 1, context);
     IMatrixValue<String> inExposed = IMatrixValue.var("exposed", 5, 1, context);
 

@@ -17,7 +17,8 @@ public class NGramPredictorTest {
 
   @Test
   public void testOutputHasNoException() {
-    NGramPredictor predictor = new NGramPredictor(20, 10, NGramPredictor.randomizedContext(20, 10));
+    NGramPredictor predictor =
+        new NGramPredictor(20, 10, NGramPredictor.randomizedContext(20, 10), .0005);
     List<Integer> input = new ArrayList<>();
     input.add(0);
     input.add(1);
@@ -26,13 +27,14 @@ public class NGramPredictorTest {
 
   @Test
   public void testLossHasNoExceptions() {
-    NGramPredictor predictor = new NGramPredictor(20, 10, NGramPredictor.randomizedContext(20, 10));
+    NGramPredictor predictor =
+        new NGramPredictor(20, 10, NGramPredictor.randomizedContext(20, 10), .0005);
     List<Integer> input = new ArrayList<>();
     input.add(1);
     input.add(2);
     input.add(3);
     input.add(4);
-    predictor.getLoss(input).value();
+    predictor.getLoss(input, 10).value();
   }
 
   @Test
@@ -40,7 +42,7 @@ public class NGramPredictorTest {
     Map<IndexedKey<String>, Double> context = NGramPredictor.randomizedContext(8, 6);
     Map<IndexedKey<String>, Range> variableRanges = new HashMap<>();
     context.forEach((k, v) -> variableRanges.put(k, new Range(-1, 1)));
-    NGramPredictor predictor = new NGramPredictor(8, 6, context);
+    NGramPredictor predictor = new NGramPredictor(8, 6, context, .0005);
     List<Integer> input = new ArrayList<>();
     input.add(1);
     input.add(1);
@@ -48,10 +50,10 @@ public class NGramPredictorTest {
     input.add(1);
     for (int i = 0; i < 50; ++i) {
       System.out.println(predictor.predictNext(input, 5));
-      IScalarValue<String> loss = predictor.getLoss(input);
+      IScalarValue<String> loss = predictor.getLoss(input, 5);
       System.out.println(loss.value());
       context = GradientDescentOptimizer.step(loss, context, variableRanges, 1);
-      predictor = new NGramPredictor(8, 6, context);
+      predictor = new NGramPredictor(8, 6, context, .0005);
     }
   }
 

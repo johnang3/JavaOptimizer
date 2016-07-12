@@ -2,27 +2,28 @@ package angland.optimizer.utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public class ObjectToFloatMap<Key> {
+public class ObjectToDoubleMap<Key> {
 
   private List<Entry<Key>>[] arr;
   private final double loadFactor;
   private int size;
 
-  private ObjectToFloatMap(List<Entry<Key>>[] arr, double loadFactor, int size) {
+  private ObjectToDoubleMap(List<Entry<Key>>[] arr, double loadFactor, int size) {
     this.arr = arr;
     this.loadFactor = loadFactor;
     this.size = size;
   }
 
   @SuppressWarnings("unchecked")
-  public ObjectToFloatMap(int initialSize, double loadFactor) {
+  public ObjectToDoubleMap(int initialSize, double loadFactor) {
     this(new List[initialSize], loadFactor, 0);
   }
 
   @SuppressWarnings("unchecked")
-  public ObjectToFloatMap(int initialSize) {
+  public ObjectToDoubleMap(int initialSize) {
     this(new List[initialSize], 1.0, 0);
   }
 
@@ -36,7 +37,7 @@ public class ObjectToFloatMap<Key> {
   }
 
   private List<Entry<Key>> getBucket(Key key) {
-    return arr[key.hashCode() % arr.length];
+    return arr[Math.abs(key.hashCode()) % arr.length];
   }
 
   private Entry<Key> getEntryFromBucket(Key key, List<Entry<Key>> bucket) {
@@ -61,12 +62,14 @@ public class ObjectToFloatMap<Key> {
     return entry == null ? 0 : entry.getValue();
   }
 
-  public void put(Key key, float value) {
-    int bucketIdx = key.hashCode() % arr.length;
+
+  public void put(Key key, double value) {
+    int absHashCode = Math.abs(key.hashCode());
+    int bucketIdx = absHashCode % arr.length;
     List<Entry<Key>> bucket = arr[bucketIdx];
     Entry<Key> entry = getEntryFromBucket(key, bucket);
     if (entry == null) {
-      entry = new Entry<Key>(key, value);
+      entry = new Entry<Key>(key, value, absHashCode);
       insertNewValue(bucketIdx, bucket, entry);
     }
     entry.value = value;
@@ -87,17 +90,17 @@ public class ObjectToFloatMap<Key> {
       for (List<Entry<Key>> oldBucket : arr) {
         if (oldBucket != null) {
           for (Entry<Key> oldEntry : oldBucket) {
-            List<Entry<Key>> targetBucket = a2[oldEntry.getKey().hashCode() % a2.length];
+            List<Entry<Key>> targetBucket = a2[oldEntry.hashCode() % a2.length];
             if (targetBucket == null) {
               targetBucket = new ArrayList<>(1);
-              a2[oldEntry.getKey().hashCode() % a2.length] = targetBucket;
+              a2[oldEntry.hashCode() % a2.length] = targetBucket;
             }
             targetBucket.add(oldEntry);
           }
         }
       }
       this.arr = a2;
-      existingBucketIdx = entry.getKey().hashCode() % arr.length;
+      existingBucketIdx = entry.hashCode() % arr.length;
       existingBucket = arr[existingBucketIdx];
       if (existingBucket == null) {
         existingBucket = new ArrayList<>(1);
@@ -107,19 +110,20 @@ public class ObjectToFloatMap<Key> {
     }
   }
 
-  public void adjust(Key key, float shift) {
-    int bucketIdx = key.hashCode() % arr.length;
+  public void adjust(Key key, double shift) {
+    int absHashCode = Math.abs(key.hashCode());
+    int bucketIdx = absHashCode % arr.length;
     List<Entry<Key>> bucket = arr[bucketIdx];
     Entry<Key> entry = getEntryFromBucket(key, bucket);
     if (entry != null) {
       entry.value += shift;
     } else {
-      entry = new Entry<>(key, shift);
+      entry = new Entry<>(key, shift, absHashCode);
       insertNewValue(bucketIdx, bucket, entry);
     }
   }
 
-  public ObjectToFloatMap<Key> cloneWithMultiplier(float multiplier) {
+  public ObjectToDoubleMap<Key> cloneWithMultiplier(double multiplier) {
     @SuppressWarnings("unchecked")
     List<Entry<Key>>[] a2 = new List[arr.length];
     for (int i = 0; i < arr.length; ++i) {
@@ -127,11 +131,21 @@ public class ObjectToFloatMap<Key> {
       if (bucket != null) {
         a2[i] = new ArrayList<>(bucket.size());
         for (Entry<Key> entry : bucket) {
-          a2[i].add(new Entry<>(entry.key, entry.value * multiplier));
+          a2[i].add(new Entry<>(entry.key, entry.value * multiplier, entry.hashCode()));
         }
       }
     }
-    return new ObjectToFloatMap<>(a2, loadFactor, size);
+    return new ObjectToDoubleMap<>(a2, loadFactor, size);
+  }
+
+  public void actOnEntries(Consumer<Entry<Key>> consumer) {
+    for (List<Entry<Key>> bucket : arr) {
+      if (bucket != null) {
+        for (Entry<Key> entry : bucket) {
+          consumer.accept(entry);
+        }
+      }
+    }
   }
 
   public Stream<Entry<Key>> entries() {
@@ -146,12 +160,14 @@ public class ObjectToFloatMap<Key> {
 
   public static class Entry<Key> {
     private final Key key;
-    private float value;
+    private double value;
+    private final int hashCode;
 
-    public Entry(Key key, float value) {
+    public Entry(Key key, double value, int hashCode) {
       super();
       this.key = key;
       this.value = value;
+      this.hashCode = hashCode;
     }
 
     public Key getKey() {
@@ -162,8 +178,13 @@ public class ObjectToFloatMap<Key> {
       return value;
     }
 
-    public void setValue(float value) {
+    public void setValue(double value) {
       this.value = value;
+    }
+
+    @Override
+    public int hashCode() {
+      return hashCode;
     }
   }
 
