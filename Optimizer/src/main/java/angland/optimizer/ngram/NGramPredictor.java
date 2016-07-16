@@ -12,7 +12,6 @@ import java.util.stream.Stream;
 
 import angland.optimizer.nn.LstmCell;
 import angland.optimizer.nn.LstmStateTuple;
-import angland.optimizer.var.ArrayMatrixValue;
 import angland.optimizer.var.IMatrixValue;
 import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.scalar.IScalarValue;
@@ -23,7 +22,6 @@ public class NGramPredictor {
   private final Map<IndexedKey<String>, Double> context;
   private final IMatrixValue<String> embedding;
   private final LstmCell cell;
-  private final double gradientClipThreshold;
 
   public static Map<IndexedKey<String>, Double> randomizedContext(int vocabulary, int lstmSize) {
     Map<IndexedKey<String>, Double> map = new HashMap<>();
@@ -41,7 +39,6 @@ public class NGramPredictor {
     this.embedding = IMatrixValue.var("embedding", lstmSize, vocabulary, context);
     this.cell = new LstmCell("cell", lstmSize, context, gradientClipThreshold);
     this.context = context;
-    this.gradientClipThreshold = gradientClipThreshold;
   }
 
   public Map<IndexedKey<String>, Double> getContext() {
@@ -64,8 +61,7 @@ public class NGramPredictor {
     }
     List<Integer> outputs = new ArrayList<>();
     Consumer<IMatrixValue<String>> addOutput =
-        state -> outputs.add((int) embedding.columnProximity(state).transform(v -> v.power(-1))
-            .transpose().softmax().maxIdx().value());
+        state -> outputs.add((int) embedding.transpose().times(state).softmax().maxIdx().value());
     addOutput.accept(lastOutput);
     LstmStateTuple<String> lastState = new LstmStateTuple<>(hiddenState, lastOutput);
     for (int i = 0; i < predictTokens; ++i) {
@@ -76,6 +72,9 @@ public class NGramPredictor {
 
     return outputs;
   }
+
+  private static final IMatrixValue<String> val = IMatrixValue.repeat(IScalarValue.constant(0),
+      200, 1);
 
   public IScalarValue<String> getLoss(List<Integer> inputInts, int samples) {
     if (inputInts.size() < 2) {
@@ -92,19 +91,13 @@ public class NGramPredictor {
       LstmStateTuple<String> inputState = new LstmStateTuple<>(hiddenState, selectedCol);
       LstmStateTuple<String> outputState = cell.apply(inputState);
       hiddenState = outputState.getHiddenState();
-      IMatrixValue<String> softmax =
-          embedding.sampledColumnProximity(outputState.getExposedState(), output, samples)
-              .transform(v -> v.power(-1)).transpose().softmax();
-      ArrayMatrixValue.Builder<String> targetBuilder =
-          new ArrayMatrixValue.Builder<>(embedding.getWidth(), 1);
-      for (int j = 0; j < embedding.getWidth(); ++j) {
-        targetBuilder.set(j, 0, IScalarValue.constant(j == output ? 1 : 0));
-      }
-      IMatrixValue<String> target = targetBuilder.build();
-      IMatrixValue<String> crossEntropy = softmax.pointwise(target, (a, b) -> b.times(a.ln()));
+      IMatrixValue<String> sampledEmbedding =
+          embedding.selectAndSampleColumnsWithElimination(output, samples).transpose();
+      IMatrixValue<String> softmaxInput =
+          sampledEmbedding.times(outputState.getExposedState().transform(IScalarValue::cache))
+              .transform(IScalarValue::exp);
+      lossBuilder.increment(softmaxInput.get(0, 0).divide(softmaxInput.elementSum()).ln());
 
-      lossBuilder.increment(crossEntropy.get(output, 0).divide(
-          IScalarValue.constant(target.getHeight())));
     }
     return lossBuilder.build().times(IScalarValue.constant(-1))
         .divide(IScalarValue.constant(inputInts.size() - 1));

@@ -107,7 +107,6 @@ public interface IMatrixValue<VarKey> {
         components.add(this.get(j, i).minus(other.get(j, 0)).power(2));
       }
       newMatrix.set(0, i, new StreamingSum<>(components).power(.5).cache());
-      // KeyedDerivative.printRelativeDist(newMatrix.get(0, i).getGradient());
     }
     return newMatrix.build();
   }
@@ -211,6 +210,69 @@ public interface IMatrixValue<VarKey> {
       int row = availableIndices.get(i);
       for (int j = 0; j < getWidth(); ++j) {
         builder.set(row, j, get(row, j));
+      }
+    }
+    return builder.build();
+  }
+
+  public static List<Integer> selectAndSample(int max, int count, int forced) {
+    if (count >= max) {
+      throw new IllegalArgumentException("Count " + max + " must be less than max: " + count);
+    }
+    List<Integer> selected = new ArrayList<>();
+    selected.add(forced);
+    List<Integer> availableIndices = new ArrayList<>(max - 1);
+    for (int i = 0; i < max; ++i) {
+      if (i != forced) {
+        availableIndices.add(i);
+      }
+    }
+    Collections.shuffle(availableIndices);
+    for (int i = 0; i < count; ++i) {
+      selected.add(availableIndices.get(i));
+    }
+    return selected;
+  }
+
+  /**
+   * Returns a new matrix whos 0th row is the firstRowIndex'th row of this matrix, and that has
+   * randomRows other randomly selected rows.
+   * 
+   * @param firstRowIndex
+   * @param randomRows
+   * @return
+   */
+  public default ArrayMatrixValue<VarKey> selectAndSampleRowsWithElimination(int firstRowIndex,
+      int randomRows) {
+    return getRows(selectAndSample(getHeight(), randomRows, firstRowIndex));
+  }
+
+  public default ArrayMatrixValue<VarKey> selectAndSampleColumnsWithElimination(int firstIndex,
+      int randomRows) {
+    if (getWidth() < randomRows + 1) {
+      throw new IllegalArgumentException("Width " + getWidth()
+          + " must be equal at least to one plus randomRows: " + randomRows);
+    }
+    return getColumns(selectAndSample(getWidth(), randomRows, firstIndex));
+  }
+
+  public default ArrayMatrixValue<VarKey> getRows(List<Integer> rows) {
+    Builder<VarKey> builder = new Builder<>(rows.size(), getWidth());
+    for (int i = 0; i < rows.size(); ++i) {
+      int inputRow = rows.get(i);
+      for (int col = 0; col < getWidth(); ++col) {
+        builder.set(i, col, get(inputRow, col));
+      }
+    }
+    return builder.build();
+  }
+
+  public default ArrayMatrixValue<VarKey> getColumns(List<Integer> columns) {
+    Builder<VarKey> builder = new Builder<>(getHeight(), columns.size());
+    for (int i = 0; i < columns.size(); ++i) {
+      int inputColumn = columns.get(i);
+      for (int row = 0; row < getHeight(); ++row) {
+        builder.set(row, i, get(row, inputColumn));
       }
     }
     return builder.build();

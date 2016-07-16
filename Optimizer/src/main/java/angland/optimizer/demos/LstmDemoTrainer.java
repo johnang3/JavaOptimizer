@@ -25,7 +25,7 @@ public class LstmDemoTrainer {
       throws IOException {
     int vocabSize = 10000;
     int lstmSize = 200;
-    int samples = 10;
+    int samples = 40;
     int batchSize = 10;
     int saveInterval = 1;
     double gradientClipThreshold = 0.2;

@@ -100,4 +100,6 @@ public class MathUtils {
       System.out.println("Slice " + i + " value:" + list.get(i * (list.size() / slices)));
     }
   }
+
+
 }
