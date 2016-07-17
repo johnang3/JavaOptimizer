@@ -10,8 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import angland.optimizer.ngram.NGramTrainer;
 
@@ -24,9 +22,9 @@ public class LstmDemoTrainer {
   public static void train(String vocabFile, String trainFile, String contextFile)
       throws IOException {
     int vocabSize = 10000;
-    int lstmSize = 200;
-    int samples = 40;
-    int batchSize = 10;
+    int lstmSize = 40;
+    int samples = 80;
+    int batchSize = 200;
     int saveInterval = 1;
     double gradientClipThreshold = 0.2;
     List<String> vocabTokens = new ArrayList<>();
@@ -45,20 +43,20 @@ public class LstmDemoTrainer {
 
     System.out.println("Loading train data.");
     Files.lines(Paths.get(trainFile)).forEach(line -> {
-      List<String> tokens = tokenize(line);
+      List<String> tokens = TokenBiMap.tokenize(line);
       List<Integer> tokenInts = new ArrayList<>();
       for (String token : tokens) {
         int tokenInt = tbm.getIdx(token);
         if (tokenInt == tbm.getUnkIdx()) {
-          if (tokenInts.size() > 1) {
+          if (tokenInts.size() > 5) {
             trainSentences.add(tokenInts);
-            tokenInts = new ArrayList<>();
           }
+          tokenInts = new ArrayList<>();
         } else {
           tokenInts.add(tokenInt);
         }
       }
-      if (tokenInts.size() > 1) {
+      if (tokenInts.size() > 5) {
         trainSentences.add(tokenInts);
       }
     });
@@ -77,13 +75,5 @@ public class LstmDemoTrainer {
     }
   }
 
-  public static List<String> tokenize(String line) {
 
-    Matcher matcher = Pattern.compile("\\w+|[.,!?:\\'\\\"]").matcher(line);
-    ArrayList<String> tokens = new ArrayList<>();
-    while (matcher.find()) {
-      tokens.add(matcher.group().toLowerCase());
-    }
-    return tokens;
-  }
 }

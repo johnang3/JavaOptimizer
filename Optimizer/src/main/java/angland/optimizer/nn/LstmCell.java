@@ -3,8 +3,8 @@ package angland.optimizer.nn;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import angland.optimizer.var.IMatrixValue;
 import angland.optimizer.var.IndexedKey;
+import angland.optimizer.var.matrix.IMatrixValue;
 import angland.optimizer.var.scalar.IScalarValue;
 
 
@@ -20,19 +20,27 @@ public class LstmCell {
   private final double gradientClipThreshold;
 
   public LstmCell(String varPrefix, int size, Map<IndexedKey<String>, Double> context,
-      double gradientClipThreshold) {
+      double gradientClipThreshold, boolean constant) {
     this.retain =
         new FeedForwardLayer<>(size, size, v -> v.sigmoid().clipGradient(gradientClipThreshold),
-            varPrefix + "_retain_w", varPrefix + "_retain_b", context);
+            varPrefix + "_retain_w", varPrefix + "_retain_b", context, constant);
     this.modify =
         new FeedForwardLayer<>(size, size, v -> v.tanh().clipGradient(gradientClipThreshold),
-            varPrefix + "_modify_w", varPrefix + "_modify_b", context);
+            varPrefix + "_modify_w", varPrefix + "_modify_b", context, constant);
     this.select =
         new FeedForwardLayer<>(size, size, v -> v.sigmoid().clipGradient(gradientClipThreshold),
-            varPrefix + "_select_w", varPrefix + "_select_b", context);
+            varPrefix + "_select_w", varPrefix + "_select_b", context, constant);
     this.gradientClipThreshold = gradientClipThreshold;
     this.size = size;
   }
+
+
+
+  public double getGradientClipThreshold() {
+    return gradientClipThreshold;
+  }
+
+
 
   public LstmStateTuple<String> apply(LstmStateTuple<String> input) {
 

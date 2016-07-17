@@ -13,7 +13,6 @@ import angland.optimizer.optimizer.Range;
 import angland.optimizer.saver.StringContext;
 import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.scalar.IScalarValue;
-import angland.optimizer.var.scalar.MappedDerivativeScalar;
 
 public class NGramTrainer {
 
@@ -23,26 +22,31 @@ public class NGramTrainer {
     Map<IndexedKey<String>, Double> context = null;
     long tokenCount = 0;
     if (contextPath.exists()) {
+      System.out.println("Loading context " + contextPath);
       context = StringContext.loadContext(contextPath);
+      System.out.println("Load complete.");
     } else {
+      System.out.println("Initializing context " + contextPath);
       context = NGramPredictor.randomizedContext(vocabSize, lstmSize);
+      System.out.println("New context initialized.");
     }
     Map<IndexedKey<String>, Range> variableRanges = new HashMap<>();
     context.forEach((k, v) -> variableRanges.put(k, new Range(-1, 1)));
     NGramPredictor predictor =
-        new NGramPredictor(vocabSize, lstmSize, context, gradientClipThreshold);
-    IScalarValue<String> cumulativeLoss = IScalarValue.constant(0);
+        new NGramPredictor(vocabSize, lstmSize, context, gradientClipThreshold, false);
+
     long startTime = System.currentTimeMillis();
     for (int i = 0; i < trainSentences.size() / batchSize; ++i) {
+      IScalarValue<String> cumulativeLoss = IScalarValue.constant(0);
       List<List<Integer>> batch = new ArrayList<>();
       for (int j = 0; j < batchSize; ++j) {
         List<Integer> sequence = trainSentences.get((int) (trainSentences.size() * Math.random()));
         batch.add(sequence);
         tokenCount += sequence.size();
       }
-      MappedDerivativeScalar<String> loss = predictor.getBatchLoss(batch, es, samples);
+      IScalarValue<String> loss = predictor.getBatchLoss(batch, es, samples);
       context = GradientDescentOptimizer.step(loss, context, variableRanges, stepDistance);
-      predictor = new NGramPredictor(vocabSize, lstmSize, context, gradientClipThreshold);
+      predictor = new NGramPredictor(vocabSize, lstmSize, context, gradientClipThreshold, false);
       cumulativeLoss = cumulativeLoss.plus(loss);
       if (i % saveInterval == 0) {
         double timeTakenSeconds = (System.currentTimeMillis() - startTime) / 1000.0;
@@ -52,7 +56,6 @@ public class NGramTrainer {
         System.out.println("Tokens per second " + tokensPerSecond);
         System.out.println("Sequence per second " + sequencesPerSecond);
         StringContext.saveContext(context, contextPath);
-        cumulativeLoss = IScalarValue.constant(0);
       }
     }
 

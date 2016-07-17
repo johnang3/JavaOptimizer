@@ -8,6 +8,7 @@ import java.util.Map;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import angland.optimizer.var.matrix.IMatrixValue;
 import angland.optimizer.var.scalar.IScalarValue;
 
 public class MatrixTest {

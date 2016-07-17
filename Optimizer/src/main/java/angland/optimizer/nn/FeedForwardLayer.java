@@ -4,8 +4,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import angland.optimizer.var.IMatrixValue;
 import angland.optimizer.var.IndexedKey;
+import angland.optimizer.var.matrix.IMatrixValue;
 import angland.optimizer.var.scalar.IScalarValue;
 
 public class FeedForwardLayer<VarKey> {
@@ -18,12 +18,13 @@ public class FeedForwardLayer<VarKey> {
 
   public FeedForwardLayer(int inputSize, int outputSize,
       Function<IScalarValue<VarKey>, IScalarValue<VarKey>> transformation, VarKey weightKey,
-      VarKey biasKey, Map<IndexedKey<VarKey>, Double> context) {
+      VarKey biasKey, Map<IndexedKey<VarKey>, Double> context, boolean constant) {
     super();
     this.inputSize = inputSize;
     this.outputSize = outputSize;
-    this.weights = IMatrixValue.var(weightKey, this.outputSize, this.inputSize, context);
-    this.biases = IMatrixValue.var(biasKey, this.outputSize, 1, context);
+    this.weights =
+        IMatrixValue.varOrConst(weightKey, this.outputSize, this.inputSize, context, constant);
+    this.biases = IMatrixValue.varOrConst(biasKey, this.outputSize, 1, context, constant);
     this.transformation = transformation;
 
   }

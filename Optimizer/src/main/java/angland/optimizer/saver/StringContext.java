@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import angland.optimizer.var.IndexedKey;
 
@@ -24,14 +25,16 @@ public class StringContext {
     try {
       Files.lines(Paths.get(file.getAbsolutePath())).forEach(
           line -> {
-            String[] split = line.split(" ");
-            String key = split[0];
-            List<Integer> indices = new ArrayList<>();
-            for (int i = 1; i < split.length - 1; ++i) {
-              indices.add(Integer.parseInt(split[i]));
+            if (line != null && line.length() != 0) {
+              String[] split = line.split(" ");
+              String key = split[0];
+              List<Integer> indices = new ArrayList<>();
+              for (int i = 1; i < split.length - 1; ++i) {
+                indices.add(Integer.parseInt(split[i]));
+              }
+              context.put(new IndexedKey<String>(key, indices.get(0), indices.get(1)),
+                  Double.parseDouble(split[split.length - 1]));
             }
-            context.put(new IndexedKey<String>(key, indices.get(0), indices.get(1)),
-                Double.parseDouble(split[split.length - 1]));
           });
     } catch (NumberFormatException | IOException e) {
       throw new RuntimeException(e);
@@ -44,19 +47,23 @@ public class StringContext {
   }
 
   public static void saveContext(Map<IndexedKey<String>, Double> context, File file) {
-    try (FileWriter fw = new FileWriter(file); PrintWriter pw = new PrintWriter(fw);) {
-      context.forEach((k, v) -> {
-        StringBuilder sb = new StringBuilder();
-        sb.append(k.getVarKey() + " ");
-        sb.append(k.getRow() + " ");
-        sb.append(k.getCol() + " ");
-        sb.append(v);
-        pw.println(sb.toString());
-      });
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    File tmp = new File(file.getAbsolutePath() + ".tmp");
+    Consumer<File> c = f -> {
+      try (FileWriter fw = new FileWriter(f); PrintWriter pw = new PrintWriter(fw);) {
+        context.forEach((k, v) -> {
+          StringBuilder sb = new StringBuilder();
+          sb.append(k.getVarKey() + " ");
+          sb.append(k.getRow() + " ");
+          sb.append(k.getCol() + " ");
+          sb.append(v);
+          pw.println(sb.toString());
+        });
+
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    };
+    c.accept(tmp);
+    c.accept(file);
   }
-
-
 }

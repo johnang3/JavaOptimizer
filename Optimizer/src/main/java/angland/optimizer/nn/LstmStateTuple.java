@@ -1,6 +1,6 @@
 package angland.optimizer.nn;
 
-import angland.optimizer.var.IMatrixValue;
+import angland.optimizer.var.matrix.IMatrixValue;
 
 public class LstmStateTuple<VarKey> {
 

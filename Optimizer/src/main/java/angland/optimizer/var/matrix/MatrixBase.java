@@ -1,4 +1,4 @@
-package angland.optimizer.var;
+package angland.optimizer.var.matrix;
 
 
 

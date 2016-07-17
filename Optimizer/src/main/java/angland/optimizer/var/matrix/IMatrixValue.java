@@ -1,4 +1,4 @@
-package angland.optimizer.var;
+package angland.optimizer.var.matrix;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -7,7 +7,8 @@ import java.util.Map;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
-import angland.optimizer.var.ArrayMatrixValue.Builder;
+import angland.optimizer.var.IndexedKey;
+import angland.optimizer.var.matrix.ArrayMatrixValue.Builder;
 import angland.optimizer.var.scalar.IScalarValue;
 import angland.optimizer.var.scalar.MappedDerivativeScalar;
 import angland.optimizer.var.scalar.ScalarConstant;
@@ -27,10 +28,16 @@ public interface IMatrixValue<VarKey> {
     for (int i = 0; i < height; ++i) {
       for (int j = 0; j < width; ++j) {
         IndexedKey<VarKey> indexedKey = IndexedKey.matrixKey(key, i, j);
-        builder.set(i, j, IScalarValue.varIndexed(indexedKey, context));
+        builder.set(i, j, IScalarValue.var(indexedKey, context));
       }
     }
     return builder.build();
+  }
+
+  public static <VarKey> IMatrixValue<VarKey> varOrConst(VarKey key, int height, int width,
+      Map<IndexedKey<VarKey>, Double> context, boolean constant) {
+    IMatrixValue<VarKey> var = var(key, height, width, context);
+    return constant ? var.toConstant() : var;
   }
 
   public static <VarKey> IMatrixValue<VarKey> repeat(IScalarValue<VarKey> val, int height, int width) {
@@ -167,6 +174,31 @@ public interface IMatrixValue<VarKey> {
     return builder.build();
   }
 
+  /**
+   * Identical to times, except that it does not cache the result.
+   * 
+   * @param other
+   * @return
+   */
+  public default IMatrixValue<VarKey> streamingTimes(IMatrixValue<VarKey> other) {
+    if (this.getWidth() != other.getHeight()) {
+      throw new IllegalArgumentException("Width of left matrix (" + getWidth()
+          + ") must equal height of right " + "matrix (" + other.getHeight() + ")");
+    }
+    Builder<VarKey> builder = new Builder<>(this.getHeight(), other.getWidth());
+    for (int i = 0; i < this.getHeight(); ++i) {
+      for (int j = 0; j < other.getWidth(); ++j) {
+        List<IScalarValue<VarKey>> sumComponents = new ArrayList<>(2 * this.getWidth());
+        for (int k = 0; k < this.getWidth(); ++k) {
+          IScalarValue<VarKey> left = this.get(i, k);
+          IScalarValue<VarKey> right = other.get(k, j);
+          sumComponents.add(left.times(right));
+        }
+        builder.set(i, j, new StreamingSum<>(sumComponents));
+      }
+    }
+    return builder.build();
+  }
 
   public default IMatrixValue<VarKey> transpose() {
     return new TransposeView<>(this);

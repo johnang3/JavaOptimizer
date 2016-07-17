@@ -4,9 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import angland.optimizer.var.IMatrixValue;
 import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.KeyedDerivative;
+import angland.optimizer.var.matrix.IMatrixValue;
 import angland.optimizer.vec.MathUtils;
 
 public interface IScalarValue<VarKey> {
@@ -29,10 +29,20 @@ public interface IScalarValue<VarKey> {
 
   public static <VarKey> IScalarValue<VarKey> var(VarKey key,
       Map<IndexedKey<VarKey>, Double> context) {
-    return varIndexed(IndexedKey.scalarKey(key), context);
+    return var(IndexedKey.scalarKey(key), context);
   }
 
-  public static <VarKey> IScalarValue<VarKey> varIndexed(IndexedKey<VarKey> key,
+  public static <VarKey> IScalarValue<VarKey> varOrConst(VarKey key,
+      Map<IndexedKey<VarKey>, Double> context, boolean constant) {
+    return varOrConst(IndexedKey.scalarKey(key), context, constant);
+  }
+
+  public static <VarKey> IScalarValue<VarKey> varOrConst(IndexedKey<VarKey> key,
+      Map<IndexedKey<VarKey>, Double> context, boolean constant) {
+    return constant ? constant(context.get(key)) : var(key, context);
+  }
+
+  public static <VarKey> IScalarValue<VarKey> var(IndexedKey<VarKey> key,
       Map<IndexedKey<VarKey>, Double> context) {
     Double val = context.get(key);
     if (val == null) {

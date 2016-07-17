@@ -12,8 +12,8 @@ import java.util.stream.Stream;
 
 import angland.optimizer.nn.LstmCell;
 import angland.optimizer.nn.LstmStateTuple;
-import angland.optimizer.var.IMatrixValue;
 import angland.optimizer.var.IndexedKey;
+import angland.optimizer.var.matrix.IMatrixValue;
 import angland.optimizer.var.scalar.IScalarValue;
 import angland.optimizer.var.scalar.MappedDerivativeScalar;
 
@@ -22,6 +22,7 @@ public class NGramPredictor {
   private final Map<IndexedKey<String>, Double> context;
   private final IMatrixValue<String> embedding;
   private final LstmCell cell;
+
 
   public static Map<IndexedKey<String>, Double> randomizedContext(int vocabulary, int lstmSize) {
     Map<IndexedKey<String>, Double> map = new HashMap<>();
@@ -35,9 +36,9 @@ public class NGramPredictor {
   }
 
   public NGramPredictor(int vocabulary, int lstmSize, Map<IndexedKey<String>, Double> context,
-      double gradientClipThreshold) {
-    this.embedding = IMatrixValue.var("embedding", lstmSize, vocabulary, context);
-    this.cell = new LstmCell("cell", lstmSize, context, gradientClipThreshold);
+      double gradientClipThreshold, boolean constant) {
+    this.embedding = IMatrixValue.varOrConst("embedding", lstmSize, vocabulary, context, constant);
+    this.cell = new LstmCell("cell", lstmSize, context, gradientClipThreshold, constant);
     this.context = context;
   }
 
@@ -73,8 +74,6 @@ public class NGramPredictor {
     return outputs;
   }
 
-  private static final IMatrixValue<String> val = IMatrixValue.repeat(IScalarValue.constant(0),
-      200, 1);
 
   public IScalarValue<String> getLoss(List<Integer> inputInts, int samples) {
     if (inputInts.size() < 2) {
@@ -94,17 +93,21 @@ public class NGramPredictor {
       IMatrixValue<String> sampledEmbedding =
           embedding.selectAndSampleColumnsWithElimination(output, samples).transpose();
       IMatrixValue<String> softmaxInput =
-          sampledEmbedding.times(outputState.getExposedState().transform(IScalarValue::cache))
-              .transform(IScalarValue::exp);
-      lossBuilder.increment(softmaxInput.get(0, 0).divide(softmaxInput.elementSum()).ln());
+          sampledEmbedding.streamingTimes(
+              outputState.getExposedState().transform(IScalarValue::cache)).transform(
+              IScalarValue::exp);
+      IScalarValue<String> softmaxNum = softmaxInput.get(0, 0);
+      IScalarValue<String> softmaxDenom = softmaxInput.elementSum();
+      IScalarValue<String> softmaxOfCorrectIdx = softmaxNum.divide(softmaxDenom).ln();
+      lossBuilder.increment(softmaxOfCorrectIdx);
 
     }
     return lossBuilder.build().times(IScalarValue.constant(-1))
         .divide(IScalarValue.constant(inputInts.size() - 1));
   }
 
-  public MappedDerivativeScalar<String> getBatchLoss(Collection<List<Integer>> inputs,
-      ExecutorService es, int samples) {
+  public IScalarValue<String> getBatchLoss(Collection<List<Integer>> inputs, ExecutorService es,
+      int samples) {
     List<Callable<IScalarValue<String>>> losses = new ArrayList<>();
     inputs.forEach(input -> losses.add(() -> getLoss(input, samples)));
     try {
@@ -112,8 +115,16 @@ public class NGramPredictor {
       MappedDerivativeScalar.Builder<String> resultBuilder =
           new MappedDerivativeScalar.Builder<>(cell.getSize() + embedding.getWidth()
               * embedding.getHeight());
-      inputs.forEach(input -> resultBuilder.increment(getLoss(input, samples)));
-      return resultBuilder.build();
+      List<Callable<IScalarValue<String>>> tasks = new ArrayList<>();
+      inputs.forEach(x -> tasks.add(() -> getLoss(x, samples)));
+      es.invokeAll(tasks).forEach(loss -> {
+        try {
+          resultBuilder.increment(loss.get());
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      });
+      return resultBuilder.build().divide(IScalarValue.constant(inputs.size()));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

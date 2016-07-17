@@ -1,8 +1,11 @@
 package angland.optimizer.demos;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TokenBiMap {
 
@@ -28,6 +31,17 @@ public class TokenBiMap {
 
   public int getUnkIdx() {
     return unkIdx;
+  }
+
+
+  public static List<String> tokenize(String line) {
+
+    Matcher matcher = Pattern.compile("\\w+|[.,!?:\\'\\\"]").matcher(line);
+    ArrayList<String> tokens = new ArrayList<>();
+    while (matcher.find()) {
+      tokens.add(matcher.group().toLowerCase());
+    }
+    return tokens;
   }
 
 
