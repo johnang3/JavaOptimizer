@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
+import angland.optimizer.var.Context;
+import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.matrix.ArrayMatrixValue.Builder;
 import angland.optimizer.var.scalar.IScalarValue;
@@ -23,11 +25,12 @@ public interface IMatrixValue<VarKey> {
   public IScalarValue<VarKey> get(int row, int column);
 
   public static <VarKey> IMatrixValue<VarKey> var(VarKey key, int height, int width,
-      Map<IndexedKey<VarKey>, Double> context) {
+      Context<VarKey> context) {
     ArrayMatrixValue.Builder<VarKey> builder = new ArrayMatrixValue.Builder<VarKey>(height, width);
     for (int i = 0; i < height; ++i) {
       for (int j = 0; j < width; ++j) {
-        IndexedKey<VarKey> indexedKey = IndexedKey.matrixKey(key, i, j);
+        ContextKey<VarKey> indexedKey =
+            context.getContextTemplate().getContextKey(IndexedKey.matrixKey(key, i, j));
         builder.set(i, j, IScalarValue.var(indexedKey, context));
       }
     }
@@ -35,7 +38,7 @@ public interface IMatrixValue<VarKey> {
   }
 
   public static <VarKey> IMatrixValue<VarKey> varOrConst(VarKey key, int height, int width,
-      Map<IndexedKey<VarKey>, Double> context, boolean constant) {
+      Context<VarKey> context, boolean constant) {
     IMatrixValue<VarKey> var = var(key, height, width, context);
     return constant ? var.toConstant() : var;
   }
@@ -50,15 +53,16 @@ public interface IMatrixValue<VarKey> {
     return builder.build();
   }
 
-  public default MappedDerivativeScalar<VarKey> elementSum() {
-    MappedDerivativeScalar.Builder<VarKey> sum = new MappedDerivativeScalar.Builder<>(1);
+  public default IScalarValue<VarKey> elementSumStream() {
+    List<IScalarValue<VarKey>> components = new ArrayList<>();
     for (int i = 0; i < getHeight(); ++i) {
       for (int j = 0; j < getWidth(); ++j) {
-        sum.increment(get(i, j));
+        components.add(get(i, j));
       }
     }
-    return sum.build();
+    return new StreamingSum<>(components);
   }
+
 
   public default IMatrixValue<VarKey> pointwise(IMatrixValue<VarKey> other,
       BinaryOperator<IScalarValue<VarKey>> op) {
@@ -154,14 +158,14 @@ public interface IMatrixValue<VarKey> {
           IScalarValue<VarKey> right = other.get(k, j);
           sumBuilder.incrementValue(left.value() * right.value());
 
-          for (Map.Entry<IndexedKey<VarKey>, Double> entry : left.getGradient().entrySet()) {
+          for (Map.Entry<ContextKey<VarKey>, Double> entry : left.getGradient().entrySet()) {
             if (entry.getValue() != 0) {
               sumBuilder.getGradient().merge(entry.getKey(), entry.getValue() * right.value(),
                   Double::sum);
 
             }
           }
-          for (Map.Entry<IndexedKey<VarKey>, Double> entry : right.getGradient().entrySet()) {
+          for (Map.Entry<ContextKey<VarKey>, Double> entry : right.getGradient().entrySet()) {
             if (entry.getValue() != 0) {
               sumBuilder.getGradient().merge(entry.getKey(), entry.getValue() * left.value(),
                   Double::sum);

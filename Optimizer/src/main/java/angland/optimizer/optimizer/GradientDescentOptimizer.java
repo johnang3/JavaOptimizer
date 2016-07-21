@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-import angland.optimizer.var.IndexedKey;
+import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.scalar.IScalarValue;
 
 
@@ -17,14 +17,14 @@ public class GradientDescentOptimizer {
    * 
    * @return
    */
-  public static <Result, VarType> Map<IndexedKey<VarType>, Double> step(
-      IScalarValue<VarType> calculation, Map<IndexedKey<VarType>, Double> context,
-      Map<IndexedKey<VarType>, Range> variableRanges, double gradientMultiplier) {
+  public static <Result, VarType> Map<ContextKey<VarType>, Double> step(
+      IScalarValue<VarType> calculation, Map<ContextKey<VarType>, Double> context,
+      Map<ContextKey<VarType>, Range> variableRanges, double gradientMultiplier) {
     if (gradientMultiplier <= 0) {
       throw new RuntimeException("MaxStepDistance must be greater than 0.");
     }
-    Map<IndexedKey<VarType>, Double> result = new HashMap<>();
-    for (Map.Entry<IndexedKey<VarType>, Double> contextEntry : context.entrySet()) {
+    Map<ContextKey<VarType>, Double> result = new HashMap<>();
+    for (Map.Entry<ContextKey<VarType>, Double> contextEntry : context.entrySet()) {
       if (contextEntry.getValue() == null) {
         throw new RuntimeException("Null value for entry of key " + contextEntry.getKey());
       }
@@ -45,10 +45,10 @@ public class GradientDescentOptimizer {
 
 
   public static <Result, VarKey> Solution<Result, VarKey> stepToMinimum(
-      Function<Map<IndexedKey<VarKey>, Double>, Result> getResult,
+      Function<Map<ContextKey<VarKey>, Double>, Result> getResult,
       Function<Result, IScalarValue<VarKey>> getObjective,
-      Map<IndexedKey<VarKey>, Range> variableRanges,
-      Map<IndexedKey<VarKey>, Double> initialContext, double step, double minStep) {
+      Map<ContextKey<VarKey>, Range> variableRanges,
+      Map<ContextKey<VarKey>, Double> initialContext, double step, double minStep) {
     Solution<Result, VarKey> bestResult = new Solution<>(initialContext, getResult, getObjective);
     while (step > minStep) {
       Solution<Result, VarKey> next = null;

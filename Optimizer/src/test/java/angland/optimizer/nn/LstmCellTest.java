@@ -9,6 +9,8 @@ import java.util.stream.Stream;
 
 import org.junit.Test;
 
+import angland.optimizer.var.Context;
+import angland.optimizer.var.ContextTemplate;
 import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.matrix.IMatrixValue;
 
@@ -21,13 +23,14 @@ public class LstmCellTest {
 
   @Test
   public void testHiddenValueRetained() {
-    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    Map<IndexedKey<String>, Double> cMap = new HashMap<>();
     Stream.concat(
         LstmCell.getKeys("cell", 5),
         Stream.concat(IndexedKey.getAllMatrixKeys("hidden", 5, 1).stream(), IndexedKey
             .getAllMatrixKeys("exposed", 5, 1).stream())).forEach(k -> {
-      context.put(k, Math.random() * 2 - 1);
+      cMap.put(k, Math.random() * 2 - 1);
     });
+    Context<String> context = ContextTemplate.simpleContext(cMap);
     LstmCell lstmCell = new LstmCell("cell", 5, context, 0, false);
     IMatrixValue<String> inHidden = IMatrixValue.var("hidden", 5, 1, context);
     IMatrixValue<String> inExposed = IMatrixValue.var("exposed", 5, 1, context);

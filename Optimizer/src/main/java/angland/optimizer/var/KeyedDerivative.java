@@ -8,17 +8,21 @@ import java.util.stream.Collectors;
 
 public class KeyedDerivative<VarKey> {
 
-  private final IndexedKey<VarKey> key;
-  private final double value;
+  private final ContextKey<VarKey> key;
+  private double value;
 
-  public KeyedDerivative(IndexedKey<VarKey> key, double value) {
+  public KeyedDerivative(ContextKey<VarKey> key, double value) {
     super();
     this.key = key;
     this.value = value;
   }
 
-  public IndexedKey<VarKey> getKey() {
+  public ContextKey<VarKey> getKey() {
     return key;
+  }
+
+  void setValue(double value) {
+    this.value = value;
   }
 
   public double getValue() {
@@ -37,4 +41,21 @@ public class KeyedDerivative<VarKey> {
     });
 
   }
+
+  @Override
+  public int hashCode() {
+    return key.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (other == null) return false;
+    if (!(other instanceof KeyedDerivative)) {
+      return false;
+    }
+    @SuppressWarnings("rawtypes")
+    KeyedDerivative casted = (KeyedDerivative) other;
+    return key.equals(casted.key);
+  }
+
 }

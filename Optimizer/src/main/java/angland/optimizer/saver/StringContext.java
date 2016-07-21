@@ -46,7 +46,7 @@ public class StringContext {
     saveContext(context, new File(file));
   }
 
-  public static void saveContext(Map<IndexedKey<String>, Double> context, File file) {
+  public static void saveContext(Map<? extends IndexedKey<String>, Double> context, File file) {
     File tmp = new File(file.getAbsolutePath() + ".tmp");
     Consumer<File> c = f -> {
       try (FileWriter fw = new FileWriter(f); PrintWriter pw = new PrintWriter(fw);) {

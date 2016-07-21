@@ -1,8 +1,8 @@
 package angland.optimizer.nn;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
+import angland.optimizer.var.Context;
 import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.matrix.IMatrixValue;
 import angland.optimizer.var.scalar.IScalarValue;
@@ -19,7 +19,7 @@ public class LstmCell {
   private FeedForwardLayer<String> select;
   private final double gradientClipThreshold;
 
-  public LstmCell(String varPrefix, int size, Map<IndexedKey<String>, Double> context,
+  public LstmCell(String varPrefix, int size, Context<String> context,
       double gradientClipThreshold, boolean constant) {
     this.retain =
         new FeedForwardLayer<>(size, size, v -> v.sigmoid().clipGradient(gradientClipThreshold),

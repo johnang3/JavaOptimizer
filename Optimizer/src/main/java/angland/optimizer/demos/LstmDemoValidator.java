@@ -6,6 +6,7 @@ import static angland.optimizer.demos.DemoConstants.vocabSize;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,23 +14,24 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-import angland.optimizer.ngram.NGramTrainer;
+import angland.optimizer.ngram.NGramPredictor;
+import angland.optimizer.saver.StringContext;
+import angland.optimizer.var.Context;
+import angland.optimizer.var.ContextTemplate;
+import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.scalar.StreamingSum;
 
-public class LstmDemoTrainer {
+public class LstmDemoValidator {
 
-  public static void main(String[] args) throws IOException {
-    train(args[0], args[1], args[2]);
+  public static void main(String[] args) throws FileNotFoundException, IOException {
+    printLoss(args[0], args[1], args[2]);
   }
 
-  public static void train(String vocabFile, String trainDir, String contextFile)
-      throws IOException {
+  public static void printLoss(String vocabFile, String validateDir, String contextFile)
+      throws FileNotFoundException, IOException {
     int samples = 80;
-    int batchSize = 200;
-    int saveInterval = 1;
     List<String> vocabTokens = new ArrayList<>();
     vocabTokens.add("<unk>");
     try (FileReader fr = new FileReader(vocabFile); BufferedReader br = new BufferedReader(fr)) {
@@ -44,7 +46,7 @@ public class LstmDemoTrainer {
 
     List<List<Integer>> trainSentences = new ArrayList<>();
     List<File> filesInFolder =
-        Files.walk(Paths.get(trainDir)).filter(Files::isRegularFile).map(Path::toFile)
+        Files.walk(Paths.get(validateDir)).filter(Files::isRegularFile).map(Path::toFile)
             .collect(Collectors.toList());
 
     System.out.println("Loading train data.");
@@ -70,18 +72,18 @@ public class LstmDemoTrainer {
     }
     System.out.println("Done loading train data.");
     System.out.println("Train sequences: " + trainSentences.size());
+    ContextTemplate<String> contextTemplate =
+        new ContextTemplate<>(NGramPredictor.getKeys(vocabSize, lstmSize).collect(
+            Collectors.toList()));
+    Context<String> context = contextTemplate.createContext(StringContext.loadContext(contextFile));
 
-    ExecutorService es = null;
-    try {
-      es = Executors.newFixedThreadPool(4);
-      NGramTrainer.train(es, trainSentences, new File(contextFile), vocabSize, lstmSize, batchSize,
-          saveInterval, .5, samples, gradientClipThreshold);
-    } finally {
-      if (es != null) {
-        es.shutdown();
-      }
-    }
+    NGramPredictor predictor =
+        new NGramPredictor(vocabSize, lstmSize, context, gradientClipThreshold, true);
+    List<IScalarValue<String>> losses =
+        trainSentences.stream().map(t -> predictor.getLoss(t, samples))
+            .collect(Collectors.toList());
+    IScalarValue<String> loss =
+        new StreamingSum<>(losses).divide(IScalarValue.constant(losses.size()));
+    System.out.println("Loss: " + loss.value());
   }
-
-
 }

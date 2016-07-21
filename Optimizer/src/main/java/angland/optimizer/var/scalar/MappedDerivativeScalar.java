@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import angland.optimizer.var.IndexedKey;
+import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.KeyedDerivative;
 
 /**
@@ -16,9 +16,9 @@ import angland.optimizer.var.KeyedDerivative;
 public class MappedDerivativeScalar<VarKey> implements IScalarValue<VarKey> {
 
   private final double value;
-  private final Map<IndexedKey<VarKey>, Double> gradient;
+  private final Map<ContextKey<VarKey>, Double> gradient;
 
-  MappedDerivativeScalar(double value, Map<IndexedKey<VarKey>, Double> gradient) {
+  MappedDerivativeScalar(double value, Map<ContextKey<VarKey>, Double> gradient) {
     super();
     this.value = value;
     this.gradient = Collections.unmodifiableMap(gradient);
@@ -28,11 +28,12 @@ public class MappedDerivativeScalar<VarKey> implements IScalarValue<VarKey> {
     return value;
   }
 
-  public double d(IndexedKey<VarKey> v) {
+  @Override
+  public double d(ContextKey<VarKey> v) {
     return gradient.getOrDefault(v, 0.0);
   }
 
-  public Map<IndexedKey<VarKey>, Double> getGradient() {
+  public Map<ContextKey<VarKey>, Double> getGradient() {
     return gradient;
   }
 
@@ -45,7 +46,7 @@ public class MappedDerivativeScalar<VarKey> implements IScalarValue<VarKey> {
 
   public static class Builder<VarKey> {
     private double value = 0;
-    private final Map<IndexedKey<VarKey>, Double> gradient;
+    private final Map<ContextKey<VarKey>, Double> gradient;
 
     public Builder(int gradientVars) {
       gradient = new HashMap<>(gradientVars, 1);
@@ -68,7 +69,7 @@ public class MappedDerivativeScalar<VarKey> implements IScalarValue<VarKey> {
       other.actOnKeyedDerivatives((kd) -> gradient.merge(kd.getKey(), kd.getValue(), Double::sum));
     }
 
-    public Map<IndexedKey<VarKey>, Double> getGradient() {
+    public Map<ContextKey<VarKey>, Double> getGradient() {
       return gradient;
     }
 
@@ -85,7 +86,7 @@ public class MappedDerivativeScalar<VarKey> implements IScalarValue<VarKey> {
 
   @Override
   public void actOnKeyedDerivatives(Consumer<KeyedDerivative<VarKey>> consumer) {
-    for (Map.Entry<IndexedKey<VarKey>, Double> e : this.gradient.entrySet()) {
+    for (Map.Entry<ContextKey<VarKey>, Double> e : this.gradient.entrySet()) {
       consumer.accept(new KeyedDerivative<>(e.getKey(), e.getValue()));
     }
   }

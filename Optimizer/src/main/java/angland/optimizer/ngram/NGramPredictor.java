@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 
 import angland.optimizer.nn.LstmCell;
 import angland.optimizer.nn.LstmStateTuple;
+import angland.optimizer.var.Context;
 import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.matrix.IMatrixValue;
 import angland.optimizer.var.scalar.IScalarValue;
@@ -19,8 +20,9 @@ import angland.optimizer.var.scalar.MappedDerivativeScalar;
 
 public class NGramPredictor {
 
-  private final Map<IndexedKey<String>, Double> context;
+  private final Context<String> context;
   private final IMatrixValue<String> embedding;
+  private final IMatrixValue<String> responseBias;
   private final LstmCell cell;
 
 
@@ -31,18 +33,21 @@ public class NGramPredictor {
   }
 
   public static Stream<IndexedKey<String>> getKeys(int vocabulary, int lstmSize) {
-    return Stream.concat(IndexedKey.getAllMatrixKeys("embedding", lstmSize, vocabulary).stream(),
-        LstmCell.getKeys("cell", lstmSize));
+    return Stream.concat(
+        IndexedKey.getAllMatrixKeys("embedding", lstmSize, vocabulary).stream(),
+        Stream.concat(LstmCell.getKeys("cell", lstmSize),
+            IndexedKey.getAllMatrixKeys("responseBias", 1, vocabulary).stream()));
   }
 
-  public NGramPredictor(int vocabulary, int lstmSize, Map<IndexedKey<String>, Double> context,
+  public NGramPredictor(int vocabulary, int lstmSize, Context<String> context,
       double gradientClipThreshold, boolean constant) {
     this.embedding = IMatrixValue.varOrConst("embedding", lstmSize, vocabulary, context, constant);
+    this.responseBias = IMatrixValue.varOrConst("responseBias", 1, vocabulary, context, constant);
     this.cell = new LstmCell("cell", lstmSize, context, gradientClipThreshold, constant);
     this.context = context;
   }
 
-  public Map<IndexedKey<String>, Double> getContext() {
+  public Context<String> getContext() {
     return context;
   }
 
@@ -90,14 +95,16 @@ public class NGramPredictor {
       LstmStateTuple<String> inputState = new LstmStateTuple<>(hiddenState, selectedCol);
       LstmStateTuple<String> outputState = cell.apply(inputState);
       hiddenState = outputState.getHiddenState();
-      IMatrixValue<String> sampledEmbedding =
-          embedding.selectAndSampleColumnsWithElimination(output, samples).transpose();
+      List<Integer> selectedIndices =
+          IMatrixValue.selectAndSample(embedding.getWidth(), samples, output);
+      IMatrixValue<String> sampledEmbedding = embedding.getColumns(selectedIndices).transpose();
+      IMatrixValue<String> sampledBias = responseBias.getColumns(selectedIndices);
       IMatrixValue<String> softmaxInput =
-          sampledEmbedding.streamingTimes(
-              outputState.getExposedState().transform(IScalarValue::cache)).transform(
-              IScalarValue::exp);
+          sampledEmbedding
+              .streamingTimes(outputState.getExposedState().transform(IScalarValue::cache))
+              .plus(sampledBias.transpose()).transform(IScalarValue::exp);
       IScalarValue<String> softmaxNum = softmaxInput.get(0, 0);
-      IScalarValue<String> softmaxDenom = softmaxInput.elementSum();
+      IScalarValue<String> softmaxDenom = softmaxInput.elementSumStream().arrayCache(context);
       IScalarValue<String> softmaxOfCorrectIdx = softmaxNum.divide(softmaxDenom).ln();
       lossBuilder.increment(softmaxOfCorrectIdx);
 

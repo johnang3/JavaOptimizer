@@ -1,25 +1,26 @@
 package angland.optimizer.demos;
 
+import static angland.optimizer.demos.DemoConstants.gradientClipThreshold;
+import static angland.optimizer.demos.DemoConstants.lstmSize;
+import static angland.optimizer.demos.DemoConstants.vocabSize;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
 import angland.optimizer.ngram.NGramPredictor;
 import angland.optimizer.saver.StringContext;
-import angland.optimizer.var.IndexedKey;
+import angland.optimizer.var.Context;
+import angland.optimizer.var.ContextTemplate;
 
 public class LstmDemoInteractive {
 
   public static void main(String[] args) throws FileNotFoundException, IOException {
-    int vocabSize = 10000;
-    int lstmSize = 40;
-    double gradientClipThreshold = 0.2;
     List<String> vocabTokens = new ArrayList<>();
     vocabTokens.add("<unk>");
     try (FileReader fr = new FileReader(args[0]); BufferedReader br = new BufferedReader(fr)) {
@@ -31,7 +32,10 @@ public class LstmDemoInteractive {
     System.out.println("Vocabulary size " + vocabTokens.size());
     TokenBiMap tbm = new TokenBiMap(vocabTokens, "<unk>");
     System.out.println("Loading model. ");
-    Map<IndexedKey<String>, Double> context = StringContext.loadContext(args[1]);
+    ContextTemplate<String> contextTemplate =
+        new ContextTemplate<>(NGramPredictor.getKeys(vocabSize, lstmSize).collect(
+            Collectors.toList()));
+    Context<String> context = contextTemplate.createContext(StringContext.loadContext(args[1]));
     NGramPredictor predictor =
         new NGramPredictor(vocabSize, lstmSize, context, gradientClipThreshold, true);
     try (Scanner scan = new Scanner(System.in);) {
