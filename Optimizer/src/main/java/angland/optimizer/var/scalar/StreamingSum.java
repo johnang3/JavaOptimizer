@@ -25,6 +25,9 @@ public class StreamingSum<VarKey> implements IScalarValue<VarKey> {
     }
     this.value = value;
     this.branchComplexity = complexity;
+    if (Double.isNaN(this.value)) {
+      throw new RuntimeException("NaN value");
+    }
   }
 
   public StreamingSum(List<IScalarValue<VarKey>> components) {

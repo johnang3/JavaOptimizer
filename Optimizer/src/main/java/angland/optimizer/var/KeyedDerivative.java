@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 public class KeyedDerivative<VarKey> {
 
   private final ContextKey<VarKey> key;
-  private double value;
+  protected double value;
 
   public KeyedDerivative(ContextKey<VarKey> key, double value) {
     super();
@@ -21,17 +21,15 @@ public class KeyedDerivative<VarKey> {
     return key;
   }
 
-  void setValue(double value) {
-    this.value = value;
-  }
 
   public double getValue() {
     return value;
   }
 
-  public static <VarKey> void printRelativeDist(Map<IndexedKey<VarKey>, Double> gradient) {
+  public static <VarKey> void printRelativeDist(Map<? extends IndexedKey<VarKey>, Double> gradient) {
+    System.out.println("Printing derivative dist:");
     Map<VarKey, List<Double>> grouped = new HashMap<>();
-    for (Map.Entry<IndexedKey<VarKey>, Double> entry : gradient.entrySet()) {
+    for (Map.Entry<? extends IndexedKey<VarKey>, Double> entry : gradient.entrySet()) {
       grouped.computeIfAbsent(entry.getKey().getVarKey(), x -> new ArrayList<>()).add(
           entry.getValue());
     }

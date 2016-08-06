@@ -30,7 +30,7 @@ public class FeedForwardLayer<VarKey> {
   }
 
   public IMatrixValue<VarKey> apply(IMatrixValue<VarKey> input) {
-    return weights.times(input).plus(biases).transform(transformation);
+    return weights.streamingTimes(input).plus(biases).transform(transformation);
   }
 
   public int getInputSize() {
@@ -50,7 +50,7 @@ public class FeedForwardLayer<VarKey> {
   }
 
   public static <VarKey> Stream<IndexedKey<VarKey>> getVarKeys(VarKey weightKey, VarKey biasKey,
-      int outputSize, int inputSize) {
+      int inputSize, int outputSize) {
     return Stream.concat(IndexedKey.getAllMatrixKeys(weightKey, outputSize, inputSize).stream(),
         IndexedKey.getAllMatrixKeys(biasKey, outputSize, 1).stream());
   }

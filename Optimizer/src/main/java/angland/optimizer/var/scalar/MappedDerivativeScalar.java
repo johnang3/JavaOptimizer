@@ -1,11 +1,9 @@
 package angland.optimizer.var.scalar;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import angland.optimizer.var.ContextKey;
+import angland.optimizer.var.DerivativeMap;
 import angland.optimizer.var.KeyedDerivative;
 
 /**
@@ -16,12 +14,20 @@ import angland.optimizer.var.KeyedDerivative;
 public class MappedDerivativeScalar<VarKey> implements IScalarValue<VarKey> {
 
   private final double value;
-  private final Map<ContextKey<VarKey>, Double> gradient;
+  private final DerivativeMap<VarKey> gradient;
 
-  MappedDerivativeScalar(double value, Map<ContextKey<VarKey>, Double> gradient) {
+  MappedDerivativeScalar(double value, DerivativeMap<VarKey> gradient) {
     super();
     this.value = value;
-    this.gradient = Collections.unmodifiableMap(gradient);
+    this.gradient = gradient;
+    if (Double.isNaN(this.value)) {
+      throw new RuntimeException("NaN value");
+    }
+    gradient.actOnEntries(entry -> {
+      if (Double.isNaN(entry.getValue())) {
+        throw new RuntimeException("NaN derivative.");
+      }
+    });
   }
 
   public double value() {
@@ -30,12 +36,9 @@ public class MappedDerivativeScalar<VarKey> implements IScalarValue<VarKey> {
 
   @Override
   public double d(ContextKey<VarKey> v) {
-    return gradient.getOrDefault(v, 0.0);
+    return gradient.get(v);
   }
 
-  public Map<ContextKey<VarKey>, Double> getGradient() {
-    return gradient;
-  }
 
   @Override
   public MappedDerivativeScalar<VarKey> cache() {
@@ -46,10 +49,10 @@ public class MappedDerivativeScalar<VarKey> implements IScalarValue<VarKey> {
 
   public static class Builder<VarKey> {
     private double value = 0;
-    private final Map<ContextKey<VarKey>, Double> gradient;
+    private final DerivativeMap<VarKey> gradient;
 
     public Builder(int gradientVars) {
-      gradient = new HashMap<>(gradientVars, 1);
+      gradient = new DerivativeMap<VarKey>(10);
     }
 
     public double getValue() {
@@ -66,10 +69,10 @@ public class MappedDerivativeScalar<VarKey> implements IScalarValue<VarKey> {
 
     public void increment(IScalarValue<VarKey> other) {
       this.value += other.value();
-      other.actOnKeyedDerivatives((kd) -> gradient.merge(kd.getKey(), kd.getValue(), Double::sum));
+      other.actOnKeyedDerivatives((kd) -> gradient.merge(kd.getKey(), kd.getValue()));
     }
 
-    public Map<ContextKey<VarKey>, Double> getGradient() {
+    public DerivativeMap<VarKey> getGradient() {
       return gradient;
     }
 
@@ -86,9 +89,7 @@ public class MappedDerivativeScalar<VarKey> implements IScalarValue<VarKey> {
 
   @Override
   public void actOnKeyedDerivatives(Consumer<KeyedDerivative<VarKey>> consumer) {
-    for (Map.Entry<ContextKey<VarKey>, Double> e : this.gradient.entrySet()) {
-      consumer.accept(new KeyedDerivative<>(e.getKey(), e.getValue()));
-    }
+    gradient.actOnEntries(consumer);
   }
 
   @Override

@@ -1,6 +1,5 @@
 package angland.optimizer.nn;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.HashMap;
@@ -16,27 +15,24 @@ import angland.optimizer.var.matrix.IMatrixValue;
 
 public class LstmCellTest {
 
-  @Test
-  public void testStreamKeys() {
-    assertEquals(90, LstmCell.getKeys("cell", 5).count());
-  }
 
   @Test
   public void testHiddenValueRetained() {
+    LstmCellTemplate template = new LstmCellTemplate("cell", 5, 0, false);
     Map<IndexedKey<String>, Double> cMap = new HashMap<>();
     Stream.concat(
-        LstmCell.getKeys("cell", 5),
+        template.getKeys(),
         Stream.concat(IndexedKey.getAllMatrixKeys("hidden", 5, 1).stream(), IndexedKey
             .getAllMatrixKeys("exposed", 5, 1).stream())).forEach(k -> {
       cMap.put(k, Math.random() * 2 - 1);
     });
     Context<String> context = ContextTemplate.simpleContext(cMap);
-    LstmCell lstmCell = new LstmCell("cell", 5, context, 0, false);
+    RnnCell<String> lstmCell = template.create(context);
     IMatrixValue<String> inHidden = IMatrixValue.var("hidden", 5, 1, context);
     IMatrixValue<String> inExposed = IMatrixValue.var("exposed", 5, 1, context);
 
-    LstmStateTuple<String> in = new LstmStateTuple<>(inHidden, inExposed);
-    LstmStateTuple<String> out = lstmCell.apply(in);
+    RnnStateTuple<String> in = new RnnStateTuple<>(inHidden, inExposed);
+    RnnStateTuple<String> out = lstmCell.apply(in);
     assertNotNull(out.getExposedState());
     assertNotNull(out.getHiddenState());
   }

@@ -29,9 +29,12 @@ public interface IMatrixValue<VarKey> {
     ArrayMatrixValue.Builder<VarKey> builder = new ArrayMatrixValue.Builder<VarKey>(height, width);
     for (int i = 0; i < height; ++i) {
       for (int j = 0; j < width; ++j) {
-        ContextKey<VarKey> indexedKey =
-            context.getContextTemplate().getContextKey(IndexedKey.matrixKey(key, i, j));
-        builder.set(i, j, IScalarValue.var(indexedKey, context));
+        IndexedKey<VarKey> indexedKey = IndexedKey.matrixKey(key, i, j);
+        ContextKey<VarKey> contextKey = context.getContextTemplate().getContextKey(indexedKey);
+        if (contextKey == null) {
+          throw new RuntimeException("Null context key for indexed key " + indexedKey);
+        }
+        builder.set(i, j, IScalarValue.var(contextKey, context));
       }
     }
     return builder.build();
@@ -61,6 +64,31 @@ public interface IMatrixValue<VarKey> {
       }
     }
     return new StreamingSum<>(components);
+  }
+
+  /**
+   * Vertically concatenates this matrix and another matrix.
+   * 
+   * @param other
+   * @return
+   */
+  public default IMatrixValue<VarKey> vCat(IMatrixValue<VarKey> other) {
+    if (getWidth() != other.getWidth()) {
+      throw new IllegalArgumentException("Can only vCat matrices with the same width.");
+    }
+    ArrayMatrixValue.Builder<VarKey> builder =
+        new ArrayMatrixValue.Builder<>(getHeight() + other.getHeight(), other.getWidth());
+    for (int i = 0; i < getHeight(); ++i) {
+      for (int j = 0; j < getWidth(); ++j) {
+        builder.set(i, j, get(i, j));
+      }
+    }
+    for (int i = 0; i < other.getHeight(); ++i) {
+      for (int j = 0; j < other.getWidth(); ++j) {
+        builder.set(i + getHeight(), j, other.get(i, j));
+      }
+    }
+    return builder.build();
   }
 
 
@@ -160,15 +188,13 @@ public interface IMatrixValue<VarKey> {
 
           for (Map.Entry<ContextKey<VarKey>, Double> entry : left.getGradient().entrySet()) {
             if (entry.getValue() != 0) {
-              sumBuilder.getGradient().merge(entry.getKey(), entry.getValue() * right.value(),
-                  Double::sum);
+              sumBuilder.getGradient().merge(entry.getKey(), entry.getValue() * right.value());
 
             }
           }
           for (Map.Entry<ContextKey<VarKey>, Double> entry : right.getGradient().entrySet()) {
             if (entry.getValue() != 0) {
-              sumBuilder.getGradient().merge(entry.getKey(), entry.getValue() * left.value(),
-                  Double::sum);
+              sumBuilder.getGradient().merge(entry.getKey(), entry.getValue() * left.value());
             }
           }
         }
@@ -251,15 +277,42 @@ public interface IMatrixValue<VarKey> {
     return builder.build();
   }
 
+  /**
+   * Returns a list of integers containing the provided forced parameter, followed by an additional
+   * distinct count values that are each greater than or equal to zero but less than max.
+   * 
+   * @param max
+   * @param count
+   * @param forced
+   * @return
+   */
   public static List<Integer> selectAndSample(int max, int count, int forced) {
     if (count >= max) {
-      throw new IllegalArgumentException("Count " + max + " must be less than max: " + count);
+      throw new IllegalArgumentException("Count " + count + " must be less than max: " + max);
     }
     List<Integer> selected = new ArrayList<>();
     selected.add(forced);
     List<Integer> availableIndices = new ArrayList<>(max - 1);
     for (int i = 0; i < max; ++i) {
       if (i != forced) {
+        availableIndices.add(i);
+      }
+    }
+    Collections.shuffle(availableIndices);
+    for (int i = 0; i < count; ++i) {
+      selected.add(availableIndices.get(i));
+    }
+    return selected;
+  }
+
+  public static List<Integer> sampleAndSkip(int max, int count, int skip) {
+    if (count >= max) {
+      throw new IllegalArgumentException("Count " + max + " must be less than max: " + count);
+    }
+    List<Integer> selected = new ArrayList<>();
+    List<Integer> availableIndices = new ArrayList<>(max - 1);
+    for (int i = 0; i < max; ++i) {
+      if (i != skip) {
         availableIndices.add(i);
       }
     }
@@ -318,9 +371,17 @@ public interface IMatrixValue<VarKey> {
     if (getWidth() != 1) {
       throw new RuntimeException("Softmax supported only on matrices of width 1.");
     }
+    IScalarValue<VarKey> max = get(0, 0);
+    for (int i = 1; i < getHeight(); ++i) {
+      if (get(i, 0).value() > max.value()) {
+        max = get(i, 0);
+      }
+    }
+    max = max.toConstant();
+
     List<IScalarValue<VarKey>> exp = new ArrayList<>();
     for (int i = 0; i < getHeight(); ++i) {
-      exp.add(get(i, 0).exp());
+      exp.add(get(i, 0).minus(max).exp());
     }
     List<IScalarValue<VarKey>> denomComponents = new ArrayList<>();
 

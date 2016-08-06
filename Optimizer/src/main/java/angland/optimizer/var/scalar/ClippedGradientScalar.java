@@ -18,6 +18,9 @@ public class ClippedGradientScalar<VarKey> implements IScalarValue<VarKey> {
     this.clipBelow = clipBelow;
     this.branchComplexity = source.getBranchComplexity();
     this.value = source.value();
+    if (Double.isNaN(this.value)) {
+      throw new RuntimeException("NaN value");
+    }
   }
 
   @Override

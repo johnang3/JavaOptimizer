@@ -2,12 +2,12 @@ package angland.optimizer.nn;
 
 import angland.optimizer.var.matrix.IMatrixValue;
 
-public class LstmStateTuple<VarKey> {
+public class RnnStateTuple<VarKey> {
 
   private final IMatrixValue<VarKey> hiddenValue;
   private final IMatrixValue<VarKey> exposedState;
 
-  public LstmStateTuple(IMatrixValue<VarKey> hiddenValue, IMatrixValue<VarKey> exposedState) {
+  public RnnStateTuple(IMatrixValue<VarKey> hiddenValue, IMatrixValue<VarKey> exposedState) {
     super();
     this.hiddenValue = hiddenValue;
     this.exposedState = exposedState;
@@ -21,8 +21,8 @@ public class LstmStateTuple<VarKey> {
     return exposedState;
   }
 
-  public LstmStateTuple<VarKey> toConstant() {
-    return new LstmStateTuple<>(hiddenValue.toConstant(), exposedState.toConstant());
+  public RnnStateTuple<VarKey> toConstant() {
+    return new RnnStateTuple<>(hiddenValue.toConstant(), exposedState.toConstant());
   }
 
 

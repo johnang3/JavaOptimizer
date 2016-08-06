@@ -1,7 +1,5 @@
 package angland.optimizer.demos;
 
-import static angland.optimizer.demos.DemoConstants.gradientClipThreshold;
-import static angland.optimizer.demos.DemoConstants.lstmSize;
 import static angland.optimizer.demos.DemoConstants.vocabSize;
 
 import java.io.BufferedReader;
@@ -27,9 +25,12 @@ public class LstmDemoTrainer {
 
   public static void train(String vocabFile, String trainDir, String contextFile)
       throws IOException {
-    int samples = 80;
-    int batchSize = 200;
-    int saveInterval = 1;
+    int numThreads = 4;
+    System.out.println("Initializing trainer.  Numthreads: " + numThreads);
+    int samples = 100;
+    int batchSize = 50;
+    int saveInterval = 4;
+    double gradientMultiplier = .5;
     List<String> vocabTokens = new ArrayList<>();
     vocabTokens.add("<unk>");
     try (FileReader fr = new FileReader(vocabFile); BufferedReader br = new BufferedReader(fr)) {
@@ -54,16 +55,9 @@ public class LstmDemoTrainer {
         List<Integer> tokenInts = new ArrayList<>();
         for (String token : tokens) {
           int tokenInt = tbm.getIdx(token);
-          if (tokenInt == tbm.getUnkIdx()) {
-            if (tokenInts.size() > 5) {
-              trainSentences.add(tokenInts);
-            }
-            tokenInts = new ArrayList<>();
-          } else {
-            tokenInts.add(tokenInt);
-          }
+          tokenInts.add(tokenInt);
         }
-        if (tokenInts.size() > 5) {
+        if (tokenInts.size() > 1) {
           trainSentences.add(tokenInts);
         }
       });
@@ -73,9 +67,9 @@ public class LstmDemoTrainer {
 
     ExecutorService es = null;
     try {
-      es = Executors.newFixedThreadPool(4);
-      NGramTrainer.train(es, trainSentences, new File(contextFile), vocabSize, lstmSize, batchSize,
-          saveInterval, .5, samples, gradientClipThreshold);
+      es = Executors.newFixedThreadPool(numThreads);
+      NGramTrainer.train(es, trainSentences, new File(contextFile), vocabSize,
+          DemoConstants.getTemplate(false), batchSize, saveInterval, gradientMultiplier, samples);
     } finally {
       if (es != null) {
         es.shutdown();

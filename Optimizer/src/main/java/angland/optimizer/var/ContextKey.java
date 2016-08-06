@@ -9,6 +9,10 @@ public class ContextKey<VarKey> extends IndexedKey<VarKey> {
     this.idx = idx;
   }
 
+  public ContextKey(IndexedKey<VarKey> indexedKey, int idx) {
+    this(indexedKey.getVarKey(), indexedKey.getRow(), indexedKey.getCol(), idx);
+  }
+
   public int getIdx() {
     return idx;
   }

@@ -9,21 +9,23 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
+import angland.optimizer.nn.RnnCellTemplate;
 import angland.optimizer.optimizer.GradientDescentOptimizer;
 import angland.optimizer.optimizer.Range;
 import angland.optimizer.saver.StringContext;
 import angland.optimizer.var.Context;
 import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.ContextTemplate;
+import angland.optimizer.var.KeyedDerivative;
 import angland.optimizer.var.scalar.IScalarValue;
 
 public class NGramTrainer {
 
   public static void train(ExecutorService es, List<List<Integer>> trainSentences,
-      File contextPath, int vocabSize, int lstmSize, int batchSize, int saveInterval,
-      double stepDistance, int samples, double gradientClipThreshold) throws IOException {
+      File contextPath, int vocabSize, RnnCellTemplate cellTemplate, int batchSize,
+      int saveInterval, double stepDistance, int samples) throws IOException {
     ContextTemplate<String> contextTemplate =
-        new ContextTemplate<>(NGramPredictor.getKeys(vocabSize, lstmSize).collect(
+        new ContextTemplate<>(NGramPredictor.getKeys(vocabSize, cellTemplate).collect(
             Collectors.toList()));
     Context<String> context = null;
     long tokenCount = 0;
@@ -39,8 +41,7 @@ public class NGramTrainer {
     Map<ContextKey<String>, Range> variableRanges = new HashMap<>();
     context.getContextTemplate().getContextKeys()
         .forEach(k -> variableRanges.put(k, new Range(-1, 1)));
-    NGramPredictor predictor =
-        new NGramPredictor(vocabSize, lstmSize, context, gradientClipThreshold, false);
+    NGramPredictor predictor = new NGramPredictor(vocabSize, cellTemplate, context, false);
 
     long startTime = System.currentTimeMillis();
     for (int i = 0; i < trainSentences.size() / batchSize; ++i) {
@@ -55,9 +56,10 @@ public class NGramTrainer {
       context =
           contextTemplate.createContext(GradientDescentOptimizer.step(loss, context.asMap(),
               variableRanges, stepDistance));
-      predictor = new NGramPredictor(vocabSize, lstmSize, context, gradientClipThreshold, false);
+      predictor = new NGramPredictor(vocabSize, cellTemplate, context, false);
       cumulativeLoss = cumulativeLoss.plus(loss);
       if (i % saveInterval == 0) {
+        KeyedDerivative.printRelativeDist(loss.getGradient());
         double timeTakenSeconds = (System.currentTimeMillis() - startTime) / 1000.0;
         double tokensPerSecond = (tokenCount) / timeTakenSeconds;
         double sequencesPerSecond = ((i + 1) * saveInterval * batchSize) / timeTakenSeconds;

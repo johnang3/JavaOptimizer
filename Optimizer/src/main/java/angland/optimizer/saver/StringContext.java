@@ -51,6 +51,9 @@ public class StringContext {
     Consumer<File> c = f -> {
       try (FileWriter fw = new FileWriter(f); PrintWriter pw = new PrintWriter(fw);) {
         context.forEach((k, v) -> {
+          if (Double.isNaN(v)) {
+            throw new RuntimeException("NaN value detected.  Not saving.");
+          }
           StringBuilder sb = new StringBuilder();
           sb.append(k.getVarKey() + " ");
           sb.append(k.getRow() + " ");

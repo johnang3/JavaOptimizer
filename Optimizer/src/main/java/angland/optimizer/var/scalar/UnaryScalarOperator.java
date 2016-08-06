@@ -16,6 +16,9 @@ public class UnaryScalarOperator<VarKey> implements IScalarValue<VarKey> {
     this.fOfX = fOfX;
     this.fPrimeOfX = fPrimeOfX;
     this.arg = arg;
+    if (Double.isNaN(fOfX)) {
+      throw new RuntimeException("NaN value");
+    }
   }
 
   @Override

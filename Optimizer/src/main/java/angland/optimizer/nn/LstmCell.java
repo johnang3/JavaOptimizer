@@ -1,14 +1,11 @@
 package angland.optimizer.nn;
 
-import java.util.stream.Stream;
-
 import angland.optimizer.var.Context;
-import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.matrix.IMatrixValue;
 import angland.optimizer.var.scalar.IScalarValue;
 
 
-public class LstmCell {
+public class LstmCell<VarKey> implements RnnCell<String> {
 
   private FeedForwardLayer<String> retain;
 
@@ -42,7 +39,7 @@ public class LstmCell {
 
 
 
-  public LstmStateTuple<String> apply(LstmStateTuple<String> input) {
+  public RnnStateTuple<String> apply(RnnStateTuple<String> input) {
 
     IMatrixValue<String> retainHidden = retain.apply(input.getExposedState());
 
@@ -59,7 +56,7 @@ public class LstmCell {
 
     IMatrixValue<String> cellOutput = selector.pointwiseMultiply(hiddenModified);
 
-    return new LstmStateTuple<>(hiddenModified.transform(IScalarValue::cache),
+    return new RnnStateTuple<>(hiddenModified.transform(IScalarValue::cache),
         cellOutput.transform(x -> x.clipGradient(gradientClipThreshold)));
   }
 
@@ -67,12 +64,6 @@ public class LstmCell {
     return size;
   }
 
-  public static Stream<IndexedKey<String>> getKeys(String varPrefix, int size) {
-    return Stream.concat(FeedForwardLayer.getVarKeys(varPrefix + "_retain_w", varPrefix
-        + "_retain_b", size, size), Stream.concat(
-        FeedForwardLayer.getVarKeys(varPrefix + "_modify_w", varPrefix + "_modify_b", size, size),
-        FeedForwardLayer.getVarKeys(varPrefix + "_select_w", varPrefix + "_select_b", size, size)));
-  }
 
 
 }

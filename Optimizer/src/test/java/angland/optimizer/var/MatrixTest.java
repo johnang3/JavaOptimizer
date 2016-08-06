@@ -50,6 +50,13 @@ public class MatrixTest {
     assertEquals(28.0, product.get(0, 1).value(), TOLERANCE);
     assertEquals(49.0, product.get(1, 0).value(), TOLERANCE);
     assertEquals(64.0, product.get(1, 1).value(), TOLERANCE);
+    IMatrixValue<String> streamedProduct = leftMatrix.streamingTimes(rightMatrix);
+    assertEquals(2, streamedProduct.getHeight());
+    assertEquals(2, streamedProduct.getWidth());
+    assertEquals(22.0, streamedProduct.get(0, 0).value(), TOLERANCE);
+    assertEquals(28.0, streamedProduct.get(0, 1).value(), TOLERANCE);
+    assertEquals(49.0, streamedProduct.get(1, 0).value(), TOLERANCE);
+    assertEquals(64.0, streamedProduct.get(1, 1).value(), TOLERANCE);
   }
 
   @Test

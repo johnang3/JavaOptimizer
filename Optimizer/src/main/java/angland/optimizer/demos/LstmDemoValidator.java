@@ -1,7 +1,5 @@
 package angland.optimizer.demos;
 
-import static angland.optimizer.demos.DemoConstants.gradientClipThreshold;
-import static angland.optimizer.demos.DemoConstants.lstmSize;
 import static angland.optimizer.demos.DemoConstants.vocabSize;
 
 import java.io.BufferedReader;
@@ -17,6 +15,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import angland.optimizer.ngram.NGramPredictor;
+import angland.optimizer.nn.RnnCellTemplate;
 import angland.optimizer.saver.StringContext;
 import angland.optimizer.var.Context;
 import angland.optimizer.var.ContextTemplate;
@@ -49,7 +48,7 @@ public class LstmDemoValidator {
         Files.walk(Paths.get(validateDir)).filter(Files::isRegularFile).map(Path::toFile)
             .collect(Collectors.toList());
 
-    System.out.println("Loading train data.");
+    System.out.println("Loading validation data.");
     for (File file : filesInFolder) {
       Files.lines(Paths.get(file.getAbsolutePath())).forEach(line -> {
         List<String> tokens = TokenBiMap.tokenize(line);
@@ -71,14 +70,14 @@ public class LstmDemoValidator {
       });
     }
     System.out.println("Done loading train data.");
-    System.out.println("Train sequences: " + trainSentences.size());
+    System.out.println("Validation sequences: " + trainSentences.size());
+    RnnCellTemplate template = DemoConstants.getTemplate(true);
     ContextTemplate<String> contextTemplate =
-        new ContextTemplate<>(NGramPredictor.getKeys(vocabSize, lstmSize).collect(
+        new ContextTemplate<>(NGramPredictor.getKeys(vocabSize, template).collect(
             Collectors.toList()));
     Context<String> context = contextTemplate.createContext(StringContext.loadContext(contextFile));
 
-    NGramPredictor predictor =
-        new NGramPredictor(vocabSize, lstmSize, context, gradientClipThreshold, true);
+    NGramPredictor predictor = new NGramPredictor(vocabSize, template, context, true);
     List<IScalarValue<String>> losses =
         trainSentences.stream().map(t -> predictor.getLoss(t, samples))
             .collect(Collectors.toList());

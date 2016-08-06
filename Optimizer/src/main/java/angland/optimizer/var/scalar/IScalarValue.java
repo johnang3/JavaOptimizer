@@ -1,11 +1,13 @@
 package angland.optimizer.var.scalar;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import angland.optimizer.var.Context;
 import angland.optimizer.var.ContextKey;
+import angland.optimizer.var.DerivativeMap;
 import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.KeyedDerivative;
 import angland.optimizer.var.matrix.IMatrixValue;
@@ -18,6 +20,7 @@ public interface IScalarValue<VarKey> {
   public void actOnKeyedDerivatives(Consumer<KeyedDerivative<VarKey>> consumer);
 
   public double d(ContextKey<VarKey> key);
+
 
   public default Map<ContextKey<VarKey>, Double> getGradient() {
     Map<ContextKey<VarKey>, Double> gradient = new HashMap<>();
@@ -100,7 +103,25 @@ public interface IScalarValue<VarKey> {
   }
 
   public default IScalarValue<VarKey> cache() {
-    return new MappedDerivativeScalar<>(value(), getGradient());
+    return cache(10);
+  }
+
+  public default IScalarValue<VarKey> cache(int cacheSize) {
+    DerivativeMap<VarKey> gradient = new DerivativeMap<>(cacheSize);
+    actOnKeyedDerivatives(kd -> gradient.merge(kd.getKey(), kd.getValue()));
+    return new MappedDerivativeScalar<>(value(), gradient);
+  }
+
+  /**
+   * Caches only the n entries with the highest absolute value. Discards the rest.
+   * 
+   * @param limitedCount
+   * @return
+   */
+  public default IScalarValue<VarKey> discardBeyond(int n) {
+    DerivativeMap<VarKey> gradient = new DerivativeMap<>(n);
+    actOnKeyedDerivatives(kd -> gradient.merge(kd.getKey(), kd.getValue()));
+    return new MappedDerivativeScalar<>(value(), gradient.getHighestAbs(n));
   }
 
   public default IScalarValue<VarKey> exp() {
@@ -117,22 +138,37 @@ public interface IScalarValue<VarKey> {
   }
 
   public default IScalarValue<VarKey> arrayCache(Context<VarKey> context) {
-    float[] derivs = getDerivatives(context.getContextTemplate().size());
-    Map<ContextKey<VarKey>, Double> gradient = new HashMap<>();
-    for (int i = 0; i < derivs.length; ++i) {
+    double[] derivs = getDerivatives(context.getContextTemplate().size());
+    /*
+     * int nonZero = 0; for (double d : derivs) { if (d != 0) { ++nonZero; } }
+     */
+    @SuppressWarnings("unchecked")
+    KeyedDerivative<VarKey>[] keyedDerivs = new KeyedDerivative[derivs.length];
+    List<ContextKey<VarKey>> keys = context.getContextTemplate().getContextKeys();
+    for (int i = 0; i < keyedDerivs.length; ++i) {
       if (derivs[i] != 0) {
-        gradient.put(context.getContextTemplate().getKey(i), (double) derivs[i]);
+        keyedDerivs[i] = new KeyedDerivative<>(keys.get(i), derivs[i]);
       }
     }
-    return new MappedDerivativeScalar<>(value(), gradient);
+    return new ArrayCache<>(value(), keyedDerivs);
+    /*
+     * DerivativeMap<VarKey> gradient = new DerivativeMap<>(nonZero); for (int i = 0; i <
+     * derivs.length; ++i) { if (derivs[i] != 0) {
+     * gradient.merge(context.getContextTemplate().getKey(i), (double) derivs[i]); } } return new
+     * MappedDerivativeScalar<>(value(), gradient);
+     */
   }
 
-  public default float[] getDerivatives(int contextSize) {
-    float[] arr = new float[contextSize];
+  public default double[] getDerivatives(int contextSize) {
+    double[] arr = new double[contextSize];
     this.actOnKeyedDerivatives(kd -> {
       arr[kd.getKey().getIdx()] += kd.getValue();
     });
     return arr;
+  }
+
+  public default IScalarValue<VarKey> toConstant() {
+    return constant(value());
   }
 
 

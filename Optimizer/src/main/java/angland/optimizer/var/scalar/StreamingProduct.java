@@ -18,6 +18,9 @@ public class StreamingProduct<VarKey> implements IScalarValue<VarKey> {
     this.right = right;
     this.value = left.value() * right.value();
     this.branchComplexity = left.getBranchComplexity() + right.getBranchComplexity();
+    if (Double.isNaN(this.value)) {
+      throw new RuntimeException("NaN value");
+    }
   }
 
   @Override

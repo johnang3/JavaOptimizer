@@ -16,6 +16,9 @@ public class ScalarVariable<VarKey> implements IScalarValue<VarKey> {
     this.key = key;
     this.value = value;
     this.keyedDerivative = new KeyedDerivative<>(key, 1);
+    if (Double.isNaN(this.value)) {
+      throw new RuntimeException("NaN value");
+    }
   }
 
   @Override

@@ -6,6 +6,7 @@ import java.util.function.Function;
 
 import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.vec.MathUtils;
 
 
 public class GradientDescentOptimizer {
@@ -40,9 +41,10 @@ public class GradientDescentOptimizer {
       }
       result.put(contextEntry.getKey(), stepped);
     }
+    System.out.println("Effective step distance: "
+        + MathUtils.l2Norm(MathUtils.subtract(context, result)));
     return result;
   }
-
 
   public static <Result, VarKey> Solution<Result, VarKey> stepToMinimum(
       Function<Map<ContextKey<VarKey>, Double>, Result> getResult,

@@ -11,6 +11,9 @@ public class ScalarConstant<VarKey> implements IScalarValue<VarKey> {
 
   public ScalarConstant(double value) {
     this.value = value;
+    if (Double.isNaN(this.value)) {
+      throw new RuntimeException("NaN value");
+    }
   }
 
   @Override
