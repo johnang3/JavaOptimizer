@@ -25,8 +25,10 @@ public class LstmDemoTrainer {
 
   public static void train(String vocabFile, String trainDir, String contextFile)
       throws IOException {
-    int numThreads = 4;
+    int numThreads = Integer.parseInt(System.getProperty("TRAIN_THREADS"));
     System.out.println("Initializing trainer.  Numthreads: " + numThreads);
+    System.out.println("LstmSize " + DemoConstants.lstmSize);
+    System.out.println("GradientClipThreshold " + DemoConstants.gradientClipThreshold);
     int samples = 100;
     int batchSize = 50;
     int saveInterval = 4;

@@ -78,6 +78,31 @@ public class MatrixTest {
   }
 
   @Test
+  public void testMatrixVCat() {
+    Map<IndexedKey<String>, Double> cMap = new HashMap<>();
+    cMap.put(IndexedKey.matrixKey("a", 0, 0), 1.0);
+    cMap.put(IndexedKey.matrixKey("a", 0, 1), 2.0);
+    cMap.put(IndexedKey.matrixKey("a", 1, 0), 3.0);
+    cMap.put(IndexedKey.matrixKey("a", 1, 1), 4.0);
+    cMap.put(IndexedKey.matrixKey("b", 0, 0), 5.0);
+    cMap.put(IndexedKey.matrixKey("b", 0, 1), 6.0);
+    cMap.put(IndexedKey.matrixKey("b", 1, 0), 7.0);
+    cMap.put(IndexedKey.matrixKey("b", 1, 1), 8.0);
+    Context<String> context = ContextTemplate.simpleContext(cMap);
+    IMatrixValue<String> a = IMatrixValue.var("a", 2, 2, context);
+    IMatrixValue<String> b = IMatrixValue.var("b", 2, 2, context);
+    IMatrixValue<String> ab = a.vCat(b);
+    assertEquals(1.0, ab.get(0, 0).value(), TOLERANCE);
+    assertEquals(2.0, ab.get(0, 1).value(), TOLERANCE);
+    assertEquals(3.0, ab.get(1, 0).value(), TOLERANCE);
+    assertEquals(4.0, ab.get(1, 1).value(), TOLERANCE);
+    assertEquals(5.0, ab.get(2, 0).value(), TOLERANCE);
+    assertEquals(6.0, ab.get(2, 1).value(), TOLERANCE);
+    assertEquals(7.0, ab.get(3, 0).value(), TOLERANCE);
+    assertEquals(8.0, ab.get(3, 1).value(), TOLERANCE);
+  }
+
+  @Test
   public void testChooseAndRandom() {
     Map<IndexedKey<String>, Double> cMap = new HashMap<>();
     int rowCount = 25;

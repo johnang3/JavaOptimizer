@@ -30,7 +30,7 @@ public class FeedForwardLayer<VarKey> {
   }
 
   public IMatrixValue<VarKey> apply(IMatrixValue<VarKey> input) {
-    return weights.streamingTimes(input).plus(biases).transform(transformation);
+    return weights.times(input).plus(biases).transform(transformation);
   }
 
   public int getInputSize() {

@@ -21,7 +21,6 @@ public class LstmCellTemplate implements RnnCellTemplate {
     this.isConstant = isConstant;
   }
 
-  @Override
   public RnnCell<String> create(Context<String> context) {
     return new LstmCell<>(varPrefix, size, context, gradientClipThreshold, isConstant);
   }
