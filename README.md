@@ -2,10 +2,10 @@
 
 This is a simple mathematical optimizer for linear and nonlinear programs.  
 
-#Requirements
+###Requirements
 Java 1.8
 
-#Overview
+#Implementation Overview
 
 ##Scalar
 The Scalar interface abstracts the value of a scalar, and its partial derivatives with respect to any variables.  It has a single type parameter, VarKey, which is used to create variables and look up partial derivatives with respect to variables. Scalars can be constructed either with the Scalar.var or Scalar.constant method.  Scalar.constant creates a new scalar object of the specified value with no partial derivatives.  Scalar.var creates a scalar object associated with the given VarKey with a derivative of 1 with respect to that varkey and a value equal to the value of the specified varkey in the given context.  
@@ -40,16 +40,16 @@ The Matrix interface supports Matrix addition and multiplication.  The .transfor
 
 ##Optimizer
 
-The Optimizer class has several static methods that may be used to find local minima for the value of an objective function.  The most flexible of these methods is Optimizer.optimizerWithConstraints, which may be used to minimize the value of an arbitrary function with respect to any number of arbitrary constraints.  It accepts eights parameters:
+The Optimizer class has several static methods that may be used to find local minima for the value of an objective function.  The most flexible of these methods is Optimizer.optimizerWithConstraints, which may be used to minimize the value of an arbitrary function with respect to any number of arbitrary constraints.  It requires these parameters:
 
-getResult - Create a Result object from the given context
-getObjective - Extract the objective value from a Result
-zeroMinimumConstraints - A list of constraints.  Each of these functions must evaluate to zero or more for the result to be in bounds.
-penaltyTransform - A unary operator to be invoked on the weighted sum of constraint violations. 
-initialContext - The starting point.
-step - The initial step distance.
-minStep - The minimum step distance that will be bothered with.
-exceedanceTolerance - The highest amount of total constraint violation that will be tolerated.
+- getResult - Create a Result object from the given context
+- getObjective - Extract the objective value from a Result
+- zeroMinimumConstraints - A list of constraints.  Each of these functions must evaluate to zero or more for the result to be in bounds.
+- penaltyTransform - A unary operator to be invoked on the weighted sum of constraint violations. 
+- initialContext - The starting point.
+- step - The initial step distance.
+- minStep - The minimum step distance that will be bothered with.
+- exceedanceTolerance - The highest amount of total constraint violation that will be tolerated.
 
 This method is implemented by adding a penalty function of the total constraint violations to the objective function.  If the given objective function is f(x), this modified function is:
 
