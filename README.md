@@ -8,7 +8,7 @@ Java 1.8
 #Implementation Overview
 
 ##Scalar
-The Scalar interface abstracts the value of a scalar, and its partial derivatives with respect to any variables.  It has a single type parameter, VarKey, which is used to create variables and look up partial derivatives with respect to variables. Scalars can be constructed either with the Scalar.var or Scalar.constant method.  Scalar.constant creates a new scalar object of the specified value with no partial derivatives.  Scalar.var creates a scalar object associated with the given VarKey with a derivative of 1 with respect to that varkey and a value equal to the value of the specified varkey in the given context.  
+The Scalar interface abstracts the value of a scalar, and its partial derivatives with respect to any variables.  It has a single type parameter, VarKey, which is used to create variables and look up partial derivatives with respect to variables. Scalars can be constructed either with the Scalar.var or Scalar.constant method.  Scalar.constant creates a new scalar object of the specified value with no partial derivatives.  Scalar.var creates a scalar object associated with the given VarKey with a derivative of 1 with respect to that varkey.  
 
 ```
 Scalar<String> five = Scalar.constant(5);  
@@ -20,7 +20,7 @@ System.out.println(fiveX.d("x")); // prints 5
 ```
 
 
-The Scalar interface supports several operations, which currently include arithmetic operations, power, exp, ln, sigmoid and tanh.  Most operators implement the .d(x) method by analyzing the derivatives of their parents.  This can become expensive when sequential operations reference prior steps multiple times.  In these cases, the .cache method should be used to aggregate a local map of VarKeys to derivatives.
+The Scalar interface supports several operations, which include arithmetic operations, power, exp, ln, sigmoid and tanh.  Most operators implement the .d(x) method by analyzing the derivatives of their parents.  This can become expensive when sequential operations reference the same prior step multiple times.  In these cases, the .cache method should be used to aggregate a local map of VarKeys to derivatives.
 
 ##Matrix
 
@@ -42,14 +42,16 @@ The Matrix interface supports Matrix addition and multiplication.  The .transfor
 
 The Optimizer class has several static methods that may be used to find local minima for the value of an objective function.  The most flexible of these methods is Optimizer.optimizerWithConstraints, which may be used to minimize the value of an arbitrary function with respect to any number of arbitrary constraints.  It requires these parameters:
 
-- getResult - Create a Result object from the given context
-- getObjective - Extract the objective value from a Result
+- getResult - Create a Result object from the given context.
+- getObjective - Extract the objective value from a Result.
 - zeroMinimumConstraints - A list of constraints.  Each of these functions must evaluate to zero or more for the result to be in bounds.
 - penaltyTransform - A unary operator to be invoked on the weighted sum of constraint violations. 
 - initialContext - The starting point.
 - step - The initial step distance.
 - minStep - The minimum step distance that will be bothered with.
 - exceedanceTolerance - The highest amount of total constraint violation that will be tolerated.
+
+The returned value is a Solution object, which contains both the Result object created by getResult and the variable mapping used to compute that result. 
 
 This method is implemented by adding a penalty function of the total constraint violations to the objective function.  If the given objective function is f(x), this modified function is:
 
