@@ -30,6 +30,7 @@ public class FeedForwardLayer<VarKey> {
   }
 
   public IMatrixValue<VarKey> apply(IMatrixValue<VarKey> input) {
+    // IScalarValue<VarKey> biasMultiplier = IScalarValue.constant(inputSize);
     return weights.times(input).plus(biases).transform(transformation);
   }
 

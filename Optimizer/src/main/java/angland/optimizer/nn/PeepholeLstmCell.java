@@ -18,16 +18,17 @@ public class PeepholeLstmCell implements RnnCell<String> {
   public PeepholeLstmCell(String varPrefix, int size, Context<String> context,
       double gradientClipThreshold, boolean constant) {
     this.retainLayer =
-        new FeedForwardLayer<>(2 * size, size,
-            v -> v.sigmoid().clipGradient(gradientClipThreshold), varPrefix + "_retain_w",
-            varPrefix + "_retain_b", context, constant);
+        new FeedForwardLayer<>(2 * size, size, v -> v.sigmoid().clipGradient(gradientClipThreshold)
+            .cache(2 * size * size), varPrefix + "_retain_w", varPrefix + "_retain_b", context,
+            constant);
     this.modifyLayer =
-        new FeedForwardLayer<>(2 * size, size, v -> v.tanh().clipGradient(gradientClipThreshold),
-            varPrefix + "_modify_w", varPrefix + "_modify_b", context, constant);
+        new FeedForwardLayer<>(2 * size, size, v -> v.tanh().clipGradient(gradientClipThreshold)
+            .cache(2 * size * size), varPrefix + "_modify_w", varPrefix + "_modify_b", context,
+            constant);
     this.selectLayer =
-        new FeedForwardLayer<>(2 * size, size,
-            v -> v.sigmoid().clipGradient(gradientClipThreshold), varPrefix + "_select_w",
-            varPrefix + "_select_b", context, constant);
+        new FeedForwardLayer<>(2 * size, size, v -> v.sigmoid().clipGradient(gradientClipThreshold)
+            .cache(2 * size * size), varPrefix + "_select_w", varPrefix + "_select_b", context,
+            constant);
     this.gradientClipThreshold = gradientClipThreshold;
     this.size = size;
   }

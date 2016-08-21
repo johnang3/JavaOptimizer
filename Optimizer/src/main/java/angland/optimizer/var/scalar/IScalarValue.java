@@ -171,6 +171,15 @@ public interface IScalarValue<VarKey> {
     return constant(value());
   }
 
+  /**
+   * @param left
+   * @param right
+   */
+  public static <VarKey> IScalarValue<VarKey> min(IScalarValue<VarKey> left,
+      IScalarValue<VarKey> right) {
+    return left.value() <= right.value() ? left : right;
+  }
+
 
 
 }

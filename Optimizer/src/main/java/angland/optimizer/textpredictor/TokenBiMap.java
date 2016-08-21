@@ -1,4 +1,4 @@
-package angland.optimizer.demos;
+package angland.optimizer.textpredictor;
 
 import java.util.ArrayList;
 import java.util.HashMap;

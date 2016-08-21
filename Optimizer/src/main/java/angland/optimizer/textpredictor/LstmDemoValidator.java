@@ -1,6 +1,6 @@
-package angland.optimizer.demos;
+package angland.optimizer.textpredictor;
 
-import static angland.optimizer.demos.DemoConstants.vocabSize;
+import static angland.optimizer.textpredictor.DemoConstants.vocabSize;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -20,7 +20,6 @@ import angland.optimizer.saver.StringContext;
 import angland.optimizer.var.Context;
 import angland.optimizer.var.ContextTemplate;
 import angland.optimizer.var.scalar.IScalarValue;
-import angland.optimizer.var.scalar.StreamingSum;
 
 public class LstmDemoValidator {
 
@@ -78,11 +77,11 @@ public class LstmDemoValidator {
     Context<String> context = contextTemplate.createContext(StringContext.loadContext(contextFile));
 
     NGramPredictor predictor = new NGramPredictor(vocabSize, template, context, true);
-    List<IScalarValue<String>> losses =
-        trainSentences.stream().map(t -> predictor.getLoss(t, samples))
-            .collect(Collectors.toList());
-    IScalarValue<String> loss =
-        new StreamingSum<>(losses).divide(IScalarValue.constant(losses.size()));
+    IScalarValue<String> loss = IScalarValue.constant(0.0);
+    for (List<Integer> sentence : trainSentences) {
+      loss = loss.plus(predictor.getLoss(sentence, samples)).cache();
+    }
+    loss = loss.divide(IScalarValue.constant(trainSentences.size()));
     System.out.println("Loss: " + loss.value());
   }
 }
