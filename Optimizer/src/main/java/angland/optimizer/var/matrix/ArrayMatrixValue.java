@@ -1,23 +1,23 @@
 package angland.optimizer.var.matrix;
 
-import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.scalar.Scalar;
 
 
 
-public class ArrayMatrixValue<VarKey> extends MatrixBase<IScalarValue<VarKey>>
+public class ArrayMatrixValue<VarKey> extends MatrixBase<Scalar<VarKey>>
     implements
-      IMatrixValue<VarKey> {
+      Matrix<VarKey> {
 
-  private final IScalarValue<VarKey>[] values;
+  private final Scalar<VarKey>[] values;
 
 
-  protected ArrayMatrixValue(int height, int width, IScalarValue<VarKey>[] values) {
+  protected ArrayMatrixValue(int height, int width, Scalar<VarKey>[] values) {
     super(height, width);
     this.values = values;
   }
 
   @Override
-  protected IScalarValue<VarKey>[] values() {
+  protected Scalar<VarKey>[] values() {
     return values;
   }
 
@@ -37,8 +37,8 @@ public class ArrayMatrixValue<VarKey> extends MatrixBase<IScalarValue<VarKey>>
     return newMatrix.build();
   }
 
-  public static <VarKey> ArrayMatrixValue<VarKey> times(IScalarValue<VarKey> scalar,
-      IMatrixValue<VarKey> matrix) {
+  public static <VarKey> ArrayMatrixValue<VarKey> times(Scalar<VarKey> scalar,
+      Matrix<VarKey> matrix) {
     Builder<VarKey> newMatrix = new Builder<>(matrix.getHeight(), matrix.getWidth());
     for (int i = 0; i < matrix.getHeight(); ++i) {
       for (int j = 0; j < matrix.getWidth(); ++j) {
@@ -48,22 +48,22 @@ public class ArrayMatrixValue<VarKey> extends MatrixBase<IScalarValue<VarKey>>
     return newMatrix.build();
   }
 
-  public static class Builder<VarKey> extends MatrixBase<IScalarValue<VarKey>> {
+  public static class Builder<VarKey> extends MatrixBase<Scalar<VarKey>> {
 
-    protected final IScalarValue<VarKey>[] values;
+    protected final Scalar<VarKey>[] values;
 
     @SuppressWarnings("unchecked")
     public Builder(int height, int width) {
       super(height, width);
-      this.values = (IScalarValue<VarKey>[]) new IScalarValue[height * width];
+      this.values = (Scalar<VarKey>[]) new Scalar[height * width];
     }
 
     @Override
-    protected IScalarValue<VarKey>[] values() {
+    protected Scalar<VarKey>[] values() {
       return values;
     }
 
-    public void set(int row, int column, IScalarValue<VarKey> calc) {
+    public void set(int row, int column, Scalar<VarKey> calc) {
       validateCoords(row, column);
       values()[column + getWidth() * row] = calc;
     }

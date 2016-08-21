@@ -9,15 +9,15 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
+import angland.optimizer.Optimizer;
+import angland.optimizer.Range;
 import angland.optimizer.nn.RnnCellTemplate;
-import angland.optimizer.optimizer.GradientDescentOptimizer;
-import angland.optimizer.optimizer.Range;
 import angland.optimizer.saver.StringContext;
 import angland.optimizer.var.Context;
 import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.ContextTemplate;
 import angland.optimizer.var.KeyedDerivative;
-import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.scalar.Scalar;
 
 public class NGramTrainer {
 
@@ -45,16 +45,16 @@ public class NGramTrainer {
 
     long startTime = System.currentTimeMillis();
     for (int i = 0; i < trainSentences.size() / batchSize; ++i) {
-      IScalarValue<String> cumulativeLoss = IScalarValue.constant(0);
+      Scalar<String> cumulativeLoss = Scalar.constant(0);
       List<List<Integer>> batch = new ArrayList<>();
       for (int j = 0; j < batchSize; ++j) {
         List<Integer> sequence = trainSentences.get((int) (trainSentences.size() * Math.random()));
         batch.add(sequence);
         tokenCount += sequence.size();
       }
-      IScalarValue<String> loss = predictor.getBatchLoss(batch, es, samples);
+      Scalar<String> loss = predictor.getBatchLoss(batch, es, samples);
       context =
-          contextTemplate.createContext(GradientDescentOptimizer.step(loss, context.asMap(),
+          contextTemplate.createContext(Optimizer.step(loss, context.asMap(),
               variableRanges, stepDistance));
       predictor = new NGramPredictor(vocabSize, cellTemplate, context, false);
       cumulativeLoss = cumulativeLoss.plus(loss);

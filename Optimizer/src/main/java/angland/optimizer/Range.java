@@ -1,4 +1,4 @@
-package angland.optimizer.optimizer;
+package angland.optimizer;
 
 public class Range {
 

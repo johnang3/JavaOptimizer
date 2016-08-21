@@ -6,7 +6,7 @@ import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.KeyedDerivative;
 
 
-public class ArrayCache<VarKey> implements IScalarValue<VarKey> {
+public class ArrayCache<VarKey> implements Scalar<VarKey> {
 
   private final double value;
   private final KeyedDerivative<VarKey>[] derivatives;

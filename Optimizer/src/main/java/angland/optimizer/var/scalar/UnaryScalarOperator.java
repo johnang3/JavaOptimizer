@@ -5,13 +5,13 @@ import java.util.function.Consumer;
 import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.KeyedDerivative;
 
-public class UnaryScalarOperator<VarKey> implements IScalarValue<VarKey> {
+public class UnaryScalarOperator<VarKey> implements Scalar<VarKey> {
 
   private final double fOfX;
   private final double fPrimeOfX;
-  private final IScalarValue<VarKey> arg;
+  private final Scalar<VarKey> arg;
 
-  public UnaryScalarOperator(double fOfX, double fPrimeOfX, IScalarValue<VarKey> arg) {
+  public UnaryScalarOperator(double fOfX, double fPrimeOfX, Scalar<VarKey> arg) {
     super();
     this.fOfX = fOfX;
     this.fPrimeOfX = fPrimeOfX;

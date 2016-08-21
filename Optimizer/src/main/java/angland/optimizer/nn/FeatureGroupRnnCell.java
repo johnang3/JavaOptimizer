@@ -2,8 +2,8 @@ package angland.optimizer.nn;
 
 import java.util.List;
 
-import angland.optimizer.var.matrix.IMatrixValue;
-import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.matrix.Matrix;
+import angland.optimizer.var.scalar.Scalar;
 
 public class FeatureGroupRnnCell implements RnnCell<String> {
 
@@ -20,12 +20,12 @@ public class FeatureGroupRnnCell implements RnnCell<String> {
 
   @Override
   public RnnStateTuple<String> apply(RnnStateTuple<String> input) {
-    IMatrixValue<String> hidden = IMatrixValue.repeat(IScalarValue.constant(0), 0, 1);
-    IMatrixValue<String> exposed = IMatrixValue.repeat(IScalarValue.constant(0), 0, 1);
+    Matrix<String> hidden = Matrix.repeat(Scalar.constant(0), 0, 1);
+    Matrix<String> exposed = Matrix.repeat(Scalar.constant(0), 0, 1);
     for (int i = 0; i < delegates.size(); ++i) {
       List<Integer> selectedIndices = selection.get(i);
-      IMatrixValue<String> delegatedHiddenInput = input.getHiddenState().getRows(selectedIndices);
-      IMatrixValue<String> delegatedExposedInput = input.getExposedState().getRows(selectedIndices);
+      Matrix<String> delegatedHiddenInput = input.getHiddenState().getRows(selectedIndices);
+      Matrix<String> delegatedExposedInput = input.getExposedState().getRows(selectedIndices);
       RnnStateTuple<String> delegateOutput =
           delegates.get(i).apply(new RnnStateTuple<>(delegatedHiddenInput, delegatedExposedInput));
       hidden = hidden.vCat(delegateOutput.getHiddenState());

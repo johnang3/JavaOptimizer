@@ -1,23 +1,23 @@
 package angland.optimizer.nn;
 
-import angland.optimizer.var.matrix.IMatrixValue;
+import angland.optimizer.var.matrix.Matrix;
 
 public class RnnStateTuple<VarKey> {
 
-  private final IMatrixValue<VarKey> hiddenValue;
-  private final IMatrixValue<VarKey> exposedState;
+  private final Matrix<VarKey> hiddenValue;
+  private final Matrix<VarKey> exposedState;
 
-  public RnnStateTuple(IMatrixValue<VarKey> hiddenValue, IMatrixValue<VarKey> exposedState) {
+  public RnnStateTuple(Matrix<VarKey> hiddenValue, Matrix<VarKey> exposedState) {
     super();
     this.hiddenValue = hiddenValue;
     this.exposedState = exposedState;
   }
 
-  public IMatrixValue<VarKey> getHiddenState() {
+  public Matrix<VarKey> getHiddenState() {
     return hiddenValue;
   }
 
-  public IMatrixValue<VarKey> getExposedState() {
+  public Matrix<VarKey> getExposedState() {
     return exposedState;
   }
 

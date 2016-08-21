@@ -11,7 +11,7 @@ import angland.optimizer.var.KeyedDerivative;
  *
  * @param <VarKey>
  */
-public class MappedDerivativeScalar<VarKey> implements IScalarValue<VarKey> {
+public class MappedDerivativeScalar<VarKey> implements Scalar<VarKey> {
 
   private final double value;
   private final DerivativeMap<VarKey> gradient;
@@ -67,7 +67,7 @@ public class MappedDerivativeScalar<VarKey> implements IScalarValue<VarKey> {
       this.value += value;
     }
 
-    public void increment(IScalarValue<VarKey> other) {
+    public void increment(Scalar<VarKey> other) {
       this.value += other.value();
       other.actOnKeyedDerivatives((kd) -> gradient.merge(kd.getKey(), kd.getValue()));
     }

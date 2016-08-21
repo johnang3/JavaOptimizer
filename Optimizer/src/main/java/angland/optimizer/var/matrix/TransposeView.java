@@ -1,13 +1,13 @@
 package angland.optimizer.var.matrix;
 
-import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.scalar.Scalar;
 
 
-public class TransposeView<VarKey> implements IMatrixValue<VarKey> {
+public class TransposeView<VarKey> implements Matrix<VarKey> {
 
-  private final IMatrixValue<VarKey> source;
+  private final Matrix<VarKey> source;
 
-  public TransposeView(IMatrixValue<VarKey> source) {
+  public TransposeView(Matrix<VarKey> source) {
     super();
     this.source = source;
   }
@@ -23,13 +23,13 @@ public class TransposeView<VarKey> implements IMatrixValue<VarKey> {
   }
 
   @Override
-  public IScalarValue<VarKey> get(int row, int column) {
+  public Scalar<VarKey> get(int row, int column) {
     return source.get(column, row);
   }
 
 
   @Override
-  public IMatrixValue<VarKey> transpose() {
+  public Matrix<VarKey> transpose() {
     return source;
   }
 

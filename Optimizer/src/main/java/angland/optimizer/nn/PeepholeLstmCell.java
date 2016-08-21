@@ -1,13 +1,13 @@
 package angland.optimizer.nn;
 
 import angland.optimizer.var.Context;
-import angland.optimizer.var.matrix.IMatrixValue;
-import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.matrix.Matrix;
+import angland.optimizer.var.scalar.Scalar;
 
 public class PeepholeLstmCell implements RnnCell<String> {
 
-  private static final IScalarValue<String> one = IScalarValue.constant(1);
-  private static final IScalarValue<String> minusOne = IScalarValue.constant(-1);
+  private static final Scalar<String> one = Scalar.constant(1);
+  private static final Scalar<String> minusOne = Scalar.constant(-1);
   private final FeedForwardLayer<String> retainLayer;
   private final FeedForwardLayer<String> modifyLayer;
   private final FeedForwardLayer<String> selectLayer;
@@ -42,23 +42,23 @@ public class PeepholeLstmCell implements RnnCell<String> {
   @Override
   public RnnStateTuple<String> apply(RnnStateTuple<String> input) {
 
-    IMatrixValue<String> combinedInputs = input.getHiddenState().vCat(input.getExposedState());
+    Matrix<String> combinedInputs = input.getHiddenState().vCat(input.getExposedState());
 
-    IMatrixValue<String> retainHidden = retainLayer.apply(combinedInputs);
+    Matrix<String> retainHidden = retainLayer.apply(combinedInputs);
 
-    IMatrixValue<String> replaceHidden = minusOne.times(retainHidden).transform(s -> s.plus(one));
+    Matrix<String> replaceHidden = minusOne.times(retainHidden).transform(s -> s.plus(one));
 
-    IMatrixValue<String> modifier = modifyLayer.apply(combinedInputs);
-    IMatrixValue<String> replaceModify = replaceHidden.pointwiseMultiply(modifier);
+    Matrix<String> modifier = modifyLayer.apply(combinedInputs);
+    Matrix<String> replaceModify = replaceHidden.pointwiseMultiply(modifier);
 
-    IMatrixValue<String> hiddenModified =
+    Matrix<String> hiddenModified =
         input.getHiddenState().pointwiseMultiply(retainHidden).plus(replaceModify)
             .transform(x -> x.cache(2 * size * size));
 
-    IMatrixValue<String> combinedUpdated = hiddenModified.vCat(input.getExposedState());
+    Matrix<String> combinedUpdated = hiddenModified.vCat(input.getExposedState());
 
-    IMatrixValue<String> selector = selectLayer.apply(combinedUpdated);
-    IMatrixValue<String> selectedOutput = selector.pointwiseMultiply(hiddenModified);
+    Matrix<String> selector = selectLayer.apply(combinedUpdated);
+    Matrix<String> selectedOutput = selector.pointwiseMultiply(hiddenModified);
     return new RnnStateTuple<>(hiddenModified, selectedOutput);
   }
 

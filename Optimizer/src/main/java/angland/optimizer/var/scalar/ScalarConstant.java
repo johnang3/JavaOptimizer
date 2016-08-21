@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.KeyedDerivative;
 
-public class ScalarConstant<VarKey> implements IScalarValue<VarKey> {
+public class ScalarConstant<VarKey> implements Scalar<VarKey> {
 
   private final double value;
 

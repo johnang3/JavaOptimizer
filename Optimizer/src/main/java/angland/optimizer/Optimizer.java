@@ -1,4 +1,4 @@
-package angland.optimizer.optimizer;
+package angland.optimizer;
 
 import java.util.HashMap;
 import java.util.List;
@@ -8,12 +8,12 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import angland.optimizer.var.ContextKey;
-import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.scalar.Scalar;
 import angland.optimizer.var.scalar.StreamingSum;
 import angland.optimizer.vec.MathUtils;
 
 
-public class GradientDescentOptimizer {
+public class Optimizer {
 
 
   /**
@@ -23,7 +23,7 @@ public class GradientDescentOptimizer {
    * @return
    */
   public static <Result, VarType> Map<ContextKey<VarType>, Double> step(
-      IScalarValue<VarType> calculation, Map<ContextKey<VarType>, Double> context,
+      Scalar<VarType> calculation, Map<ContextKey<VarType>, Double> context,
       Map<ContextKey<VarType>, Range> variableRanges, double gradientMultiplier) {
     if (gradientMultiplier <= 0) {
       throw new RuntimeException("MaxStepDistance must be greater than 0.");
@@ -53,7 +53,7 @@ public class GradientDescentOptimizer {
   }
 
   public static <Result, VarType> Map<ContextKey<VarType>, Double> stepNormalized(
-      IScalarValue<VarType> calculation, Map<ContextKey<VarType>, Double> context,
+      Scalar<VarType> calculation, Map<ContextKey<VarType>, Double> context,
       double stepDistance) {
     Map<ContextKey<VarType>, Double> result =
         MathUtils.add(context,
@@ -63,7 +63,7 @@ public class GradientDescentOptimizer {
 
   public static <Result, VarKey> Solution<Result, VarKey> stepToMinimum(
       Function<Map<ContextKey<VarKey>, Double>, Result> getResult,
-      Function<Result, IScalarValue<VarKey>> getObjective,
+      Function<Result, Scalar<VarKey>> getObjective,
       Map<ContextKey<VarKey>, Range> variableRanges,
       Map<ContextKey<VarKey>, Double> initialContext, double step, double minStep) {
     Solution<Result, VarKey> bestResult = new Solution<>(initialContext, getResult, getObjective);
@@ -82,7 +82,7 @@ public class GradientDescentOptimizer {
 
   public static <Result, VarKey> Solution<Result, VarKey> normalizedStepToMinimum(
       Function<Map<ContextKey<VarKey>, Double>, Result> getResult,
-      Function<Result, IScalarValue<VarKey>> getObjective,
+      Function<Result, Scalar<VarKey>> getObjective,
       Map<ContextKey<VarKey>, Double> initialContext, double step, double minStep) {
     Solution<Result, VarKey> bestResult = new Solution<>(initialContext, getResult, getObjective);
     while (step > minStep) {
@@ -99,9 +99,9 @@ public class GradientDescentOptimizer {
 
   private static class ConstrainedSolution<VarKey, Result> {
     private final Result result;
-    private final IScalarValue<VarKey> unweightedShortfallSum;
+    private final Scalar<VarKey> unweightedShortfallSum;
 
-    public ConstrainedSolution(Result result, IScalarValue<VarKey> unweightedShortfalls) {
+    public ConstrainedSolution(Result result, Scalar<VarKey> unweightedShortfalls) {
       super();
       this.result = result;
       this.unweightedShortfallSum = unweightedShortfalls;
@@ -114,30 +114,30 @@ public class GradientDescentOptimizer {
 
   public static <Result, VarKey> Solution<Result, VarKey> optimizeWithConstraints(
       Function<Map<ContextKey<VarKey>, Double>, Result> getResult,
-      Function<Result, IScalarValue<VarKey>> getObjective,
-      List<Function<Map<ContextKey<VarKey>, Double>, IScalarValue<VarKey>>> zeroMinimumConstraints,
-      UnaryOperator<IScalarValue<VarKey>> penaltyScalar,
+      Function<Result, Scalar<VarKey>> getObjective,
+      List<Function<Map<ContextKey<VarKey>, Double>, Scalar<VarKey>>> zeroMinimumConstraints,
+      UnaryOperator<Scalar<VarKey>> penaltyScalar,
       Map<ContextKey<VarKey>, Double> initialContext, double step, double minStep,
       double exceedanceTolerance) {
-    IScalarValue<VarKey> penaltyMultiplier = IScalarValue.constant(1.0);
-    IScalarValue<VarKey> zero = IScalarValue.constant(0);
-    IScalarValue<VarKey> minusOne = IScalarValue.constant(-1);
+    Scalar<VarKey> penaltyMultiplier = Scalar.constant(1.0);
+    Scalar<VarKey> zero = Scalar.constant(0);
+    Scalar<VarKey> minusOne = Scalar.constant(-1);
     Map<ContextKey<VarKey>, Double> currentContext = initialContext;
-    IScalarValue<VarKey> unweightedPenalty = null;
+    Scalar<VarKey> unweightedPenalty = null;
     Solution<ConstrainedSolution<VarKey, Result>, VarKey> penaltySolution = null;
     do {
       Function<Map<ContextKey<VarKey>, Double>, ConstrainedSolution<VarKey, Result>> getConstrainedSolution =
           ctx -> {
             Result r = getResult.apply(ctx);
-            List<IScalarValue<VarKey>> constraintViolations =
-                zeroMinimumConstraints.stream().map(c -> IScalarValue.min(c.apply(ctx), zero))
+            List<Scalar<VarKey>> constraintViolations =
+                zeroMinimumConstraints.stream().map(c -> Scalar.min(c.apply(ctx), zero))
                     .collect(Collectors.toList());
-            IScalarValue<VarKey> totalViolation =
+            Scalar<VarKey> totalViolation =
                 new StreamingSum<>(constraintViolations).cache().times(minusOne);
             return new ConstrainedSolution<>(r, totalViolation);
           };
-      IScalarValue<VarKey> penaltyMultiplierFinal = penaltyMultiplier;
-      Function<ConstrainedSolution<VarKey, Result>, IScalarValue<VarKey>> getPenalizedObjective =
+      Scalar<VarKey> penaltyMultiplierFinal = penaltyMultiplier;
+      Function<ConstrainedSolution<VarKey, Result>, Scalar<VarKey>> getPenalizedObjective =
           cs -> {
             return getObjective.apply(cs.result).plus(
                 penaltyScalar.apply(cs.unweightedShortfallSum.times(penaltyMultiplierFinal)));
@@ -148,7 +148,7 @@ public class GradientDescentOptimizer {
               step, minStep);
       unweightedPenalty = penaltySolution.getResult().unweightedShortfallSum;
       currentContext = penaltySolution.getContext();
-      penaltyMultiplier = penaltyMultiplier.times(IScalarValue.constant(10));
+      penaltyMultiplier = penaltyMultiplier.times(Scalar.constant(10));
     } while (unweightedPenalty.value() > exceedanceTolerance);
     return new Solution<>(currentContext, penaltySolution.getResult().result,
         penaltySolution.getObjective());

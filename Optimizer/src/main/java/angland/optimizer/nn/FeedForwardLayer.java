@@ -5,31 +5,31 @@ import java.util.stream.Stream;
 
 import angland.optimizer.var.Context;
 import angland.optimizer.var.IndexedKey;
-import angland.optimizer.var.matrix.IMatrixValue;
-import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.matrix.Matrix;
+import angland.optimizer.var.scalar.Scalar;
 
 public class FeedForwardLayer<VarKey> {
 
   private final int inputSize;
   private final int outputSize;
-  private final IMatrixValue<VarKey> weights;
-  private final IMatrixValue<VarKey> biases;
-  private final Function<IScalarValue<VarKey>, IScalarValue<VarKey>> transformation;
+  private final Matrix<VarKey> weights;
+  private final Matrix<VarKey> biases;
+  private final Function<Scalar<VarKey>, Scalar<VarKey>> transformation;
 
   public FeedForwardLayer(int inputSize, int outputSize,
-      Function<IScalarValue<VarKey>, IScalarValue<VarKey>> transformation, VarKey weightKey,
+      Function<Scalar<VarKey>, Scalar<VarKey>> transformation, VarKey weightKey,
       VarKey biasKey, Context<VarKey> context, boolean constant) {
     super();
     this.inputSize = inputSize;
     this.outputSize = outputSize;
     this.weights =
-        IMatrixValue.varOrConst(weightKey, this.outputSize, this.inputSize, context, constant);
-    this.biases = IMatrixValue.varOrConst(biasKey, this.outputSize, 1, context, constant);
+        Matrix.varOrConst(weightKey, this.outputSize, this.inputSize, context, constant);
+    this.biases = Matrix.varOrConst(biasKey, this.outputSize, 1, context, constant);
     this.transformation = transformation;
 
   }
 
-  public IMatrixValue<VarKey> apply(IMatrixValue<VarKey> input) {
+  public Matrix<VarKey> apply(Matrix<VarKey> input) {
     // IScalarValue<VarKey> biasMultiplier = IScalarValue.constant(inputSize);
     return weights.times(input).plus(biases).transform(transformation);
   }
@@ -42,11 +42,11 @@ public class FeedForwardLayer<VarKey> {
     return outputSize;
   }
 
-  public IMatrixValue<VarKey> getWeights() {
+  public Matrix<VarKey> getWeights() {
     return weights;
   }
 
-  public IMatrixValue<VarKey> getBiases() {
+  public Matrix<VarKey> getBiases() {
     return biases;
   }
 

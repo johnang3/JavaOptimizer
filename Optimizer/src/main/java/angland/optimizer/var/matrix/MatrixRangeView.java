@@ -1,16 +1,16 @@
 package angland.optimizer.var.matrix;
 
-import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.scalar.Scalar;
 
-public class MatrixRangeView<VarKey> implements IMatrixValue<VarKey> {
+public class MatrixRangeView<VarKey> implements Matrix<VarKey> {
 
-  private final IMatrixValue<VarKey> source;
+  private final Matrix<VarKey> source;
   private final int startRow;
   private final int startCol;
   private final int height;
   private final int width;
 
-  public MatrixRangeView(IMatrixValue<VarKey> source, int startRow, int startCol, int height,
+  public MatrixRangeView(Matrix<VarKey> source, int startRow, int startCol, int height,
       int width) {
     super();
     if (startRow > source.getHeight()) {
@@ -39,7 +39,7 @@ public class MatrixRangeView<VarKey> implements IMatrixValue<VarKey> {
   }
 
   @Override
-  public IScalarValue<VarKey> get(int row, int column) {
+  public Scalar<VarKey> get(int row, int column) {
     return source.get(startRow + row, startCol + column);
   }
 

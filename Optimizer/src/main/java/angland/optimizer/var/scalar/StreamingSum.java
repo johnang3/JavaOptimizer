@@ -7,18 +7,18 @@ import java.util.function.Consumer;
 import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.KeyedDerivative;
 
-public class StreamingSum<VarKey> implements IScalarValue<VarKey> {
+public class StreamingSum<VarKey> implements Scalar<VarKey> {
 
-  private final List<IScalarValue<VarKey>> components;
+  private final List<Scalar<VarKey>> components;
   private final double value;
   private final int branchComplexity;
 
   @SafeVarargs
-  public StreamingSum(IScalarValue<VarKey>... components) {
+  public StreamingSum(Scalar<VarKey>... components) {
     this.components = new ArrayList<>();
     double value = 0;
     int complexity = 0;
-    for (IScalarValue<VarKey> component : components) {
+    for (Scalar<VarKey> component : components) {
       this.components.add(component);
       value += component.value();
       complexity += component.getBranchComplexity();
@@ -30,11 +30,11 @@ public class StreamingSum<VarKey> implements IScalarValue<VarKey> {
     }
   }
 
-  public StreamingSum(List<IScalarValue<VarKey>> components) {
+  public StreamingSum(List<Scalar<VarKey>> components) {
     this.components = components;
     double value = 0;
     int complexity = 0;
-    for (IScalarValue<VarKey> component : components) {
+    for (Scalar<VarKey> component : components) {
       value += component.value();
       complexity += component.getBranchComplexity();
     }
@@ -50,7 +50,7 @@ public class StreamingSum<VarKey> implements IScalarValue<VarKey> {
   @Override
   public double d(ContextKey<VarKey> key) {
     double sum = 0;
-    for (IScalarValue<VarKey> v : components) {
+    for (Scalar<VarKey> v : components) {
       sum += v.d(key);
     }
     return sum;
@@ -63,7 +63,7 @@ public class StreamingSum<VarKey> implements IScalarValue<VarKey> {
 
   @Override
   public void actOnKeyedDerivatives(Consumer<KeyedDerivative<VarKey>> consumer) {
-    for (IScalarValue<VarKey> scalar : components) {
+    for (Scalar<VarKey> scalar : components) {
       scalar.actOnKeyedDerivatives(consumer);
     }
   }

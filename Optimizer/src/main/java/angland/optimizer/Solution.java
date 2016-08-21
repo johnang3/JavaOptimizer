@@ -1,19 +1,19 @@
-package angland.optimizer.optimizer;
+package angland.optimizer;
 
 import java.util.Map;
 import java.util.function.Function;
 
 import angland.optimizer.var.ContextKey;
-import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.scalar.Scalar;
 
 public class Solution<Result, VarType> {
 
   private final Map<ContextKey<VarType>, Double> context;
   private final Result result;
-  private final IScalarValue<VarType> objective;
+  private final Scalar<VarType> objective;
 
   public Solution(Map<ContextKey<VarType>, Double> context, Result result,
-      IScalarValue<VarType> objective) {
+      Scalar<VarType> objective) {
     super();
     this.context = context;
     this.result = result;
@@ -22,7 +22,7 @@ public class Solution<Result, VarType> {
 
   public Solution(Map<ContextKey<VarType>, Double> context,
       Function<Map<ContextKey<VarType>, Double>, Result> getResult,
-      Function<Result, IScalarValue<VarType>> getObjective) {
+      Function<Result, Scalar<VarType>> getObjective) {
     super();
     this.context = context;
     this.result = getResult.apply(context);
@@ -38,7 +38,7 @@ public class Solution<Result, VarType> {
     return result;
   }
 
-  public IScalarValue<VarType> getObjective() {
+  public Scalar<VarType> getObjective() {
     return objective;
   }
 

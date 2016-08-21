@@ -1,6 +1,6 @@
 package angland.optimizer.var;
 
-import angland.optimizer.optimizer.Range;
+import angland.optimizer.Range;
 
 public class IndexedKeyRange<VarKey> {
 

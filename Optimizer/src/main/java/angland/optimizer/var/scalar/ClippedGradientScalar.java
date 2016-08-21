@@ -5,14 +5,14 @@ import java.util.function.Consumer;
 import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.KeyedDerivative;
 
-public class ClippedGradientScalar<VarKey> implements IScalarValue<VarKey> {
+public class ClippedGradientScalar<VarKey> implements Scalar<VarKey> {
 
-  private final IScalarValue<VarKey> source;
+  private final Scalar<VarKey> source;
   private final double clipBelow;
   private final double value;
   private final int branchComplexity;
 
-  public ClippedGradientScalar(IScalarValue<VarKey> source, double clipBelow) {
+  public ClippedGradientScalar(Scalar<VarKey> source, double clipBelow) {
     super();
     this.source = source;
     this.clipBelow = clipBelow;

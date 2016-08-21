@@ -5,14 +5,14 @@ import java.util.function.Consumer;
 import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.KeyedDerivative;
 
-public class StreamingProduct<VarKey> implements IScalarValue<VarKey> {
+public class StreamingProduct<VarKey> implements Scalar<VarKey> {
 
-  private final IScalarValue<VarKey> left;
-  private final IScalarValue<VarKey> right;
+  private final Scalar<VarKey> left;
+  private final Scalar<VarKey> right;
   private final double value;
   private final int branchComplexity;
 
-  public StreamingProduct(IScalarValue<VarKey> left, IScalarValue<VarKey> right) {
+  public StreamingProduct(Scalar<VarKey> left, Scalar<VarKey> right) {
     super();
     this.left = left;
     this.right = right;

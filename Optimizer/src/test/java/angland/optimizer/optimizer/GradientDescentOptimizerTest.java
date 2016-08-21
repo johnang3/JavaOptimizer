@@ -12,11 +12,14 @@ import java.util.stream.Collectors;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import angland.optimizer.Optimizer;
+import angland.optimizer.Range;
+import angland.optimizer.Solution;
 import angland.optimizer.var.Context;
 import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.ContextTemplate;
 import angland.optimizer.var.IndexedKey;
-import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.scalar.Scalar;
 
 public class GradientDescentOptimizerTest {
 
@@ -29,14 +32,14 @@ public class GradientDescentOptimizerTest {
     startingPoint.put(IndexedKey.scalarKey("b"), 200.0);
     ContextTemplate<String> contextTemplate =
         new ContextTemplate<>(startingPoint.keySet().stream().collect(Collectors.toList()));
-    Function<Map<ContextKey<String>, Double>, IScalarValue<String>> f = m -> {
+    Function<Map<ContextKey<String>, Double>, Scalar<String>> f = m -> {
       Context<String> ctx = contextTemplate.createContext(m);
-      IScalarValue<String> aSquared = IScalarValue.var("a", ctx).power(2);
-      IScalarValue<String> bSquared = IScalarValue.var("b", ctx).power(2);
+      Scalar<String> aSquared = Scalar.var("a", ctx).power(2);
+      Scalar<String> bSquared = Scalar.var("b", ctx).power(2);
       return aSquared.plus(bSquared);
     };
-    Solution<IScalarValue<String>, String> solution =
-        GradientDescentOptimizer.stepToMinimum(f, x -> x, new HashMap<>(), contextTemplate
+    Solution<Scalar<String>, String> solution =
+        Optimizer.stepToMinimum(f, x -> x, new HashMap<>(), contextTemplate
             .createContext(startingPoint).asMap(), 10000, 10e-6);
     assertEquals(0.0, solution.getResult().value(), TOLERANCE);
     assertEquals(0.0,
@@ -57,13 +60,13 @@ public class GradientDescentOptimizerTest {
     ranges.put(context.getContextTemplate().getContextKey(IndexedKey.scalarKey("a")), new Range(
         .01, .99));
     for (int i = 0; i < 10; ++i) {
-      IScalarValue<String> a = IScalarValue.var("a", context);
-      IScalarValue<String> loss = a.ln().times(IScalarValue.constant(-1));
+      Scalar<String> a = Scalar.var("a", context);
+      Scalar<String> loss = a.ln().times(Scalar.constant(-1));
       System.out.println("Val " + a.value());
       System.out.println("Loss " + loss.value());
       context =
           context.getContextTemplate().createContext(
-              GradientDescentOptimizer.step(loss, context.asMap(), ranges, 0.1));
+              Optimizer.step(loss, context.asMap(), ranges, 0.1));
     }
   }
 
@@ -91,27 +94,27 @@ public class GradientDescentOptimizerTest {
     startingPoint.put(IndexedKey.scalarKey("y"), 0.0);
     ContextTemplate<String> contextTemplate =
         new ContextTemplate<>(startingPoint.keySet().stream().collect(Collectors.toList()));
-    Function<Map<ContextKey<String>, Double>, IScalarValue<String>> getResult = m -> {
+    Function<Map<ContextKey<String>, Double>, Scalar<String>> getResult = m -> {
       Context<String> ctx = contextTemplate.createContext(m);
-      IScalarValue<String> x = IScalarValue.var("x", ctx);
-      IScalarValue<String> y = IScalarValue.var("y", ctx);
-      return x.power(2.0).times(y.power(3.0)).times(IScalarValue.constant(-1));
+      Scalar<String> x = Scalar.var("x", ctx);
+      Scalar<String> y = Scalar.var("y", ctx);
+      return x.power(2.0).times(y.power(3.0)).times(Scalar.constant(-1));
     };
-    List<Function<Map<ContextKey<String>, Double>, IScalarValue<String>>> zeroMinimumConstraints =
+    List<Function<Map<ContextKey<String>, Double>, Scalar<String>>> zeroMinimumConstraints =
         new ArrayList<>();
-    zeroMinimumConstraints.add(m -> IScalarValue.var("x", contextTemplate.createContext(m)));
-    zeroMinimumConstraints.add(m -> IScalarValue.var("y", contextTemplate.createContext(m)));
+    zeroMinimumConstraints.add(m -> Scalar.var("x", contextTemplate.createContext(m)));
+    zeroMinimumConstraints.add(m -> Scalar.var("y", contextTemplate.createContext(m)));
     zeroMinimumConstraints.add(m -> {
       Context<String> ctx = contextTemplate.createContext(m);
-      IScalarValue<String> x = IScalarValue.var("x", ctx);
-      IScalarValue<String> y = IScalarValue.var("y", ctx);
-      return x.plus(y).minus(IScalarValue.constant(10)).times(IScalarValue.constant(-1));
+      Scalar<String> x = Scalar.var("x", ctx);
+      Scalar<String> y = Scalar.var("y", ctx);
+      return x.plus(y).minus(Scalar.constant(10)).times(Scalar.constant(-1));
     });
     Map<ContextKey<String>, Double> initialPoint =
         contextTemplate.createContext(startingPoint).asMap();
-    Solution<IScalarValue<String>, String> result =
-        GradientDescentOptimizer.optimizeWithConstraints(getResult, x -> x, zeroMinimumConstraints,
-            IScalarValue::exp, initialPoint, 1.0, .00001, .00001);
+    Solution<Scalar<String>, String> result =
+        Optimizer.optimizeWithConstraints(getResult, x -> x, zeroMinimumConstraints,
+            Scalar::exp, initialPoint, 1.0, .00001, .00001);
     assertEquals(4.0,
         result.getContext().get(contextTemplate.getContextKey(IndexedKey.scalarKey("x"))),
         TOLERANCE);
@@ -133,35 +136,35 @@ public class GradientDescentOptimizerTest {
     startingPoint.put(IndexedKey.scalarKey("y"), 0.0);
     ContextTemplate<String> contextTemplate =
         new ContextTemplate<>(startingPoint.keySet().stream().collect(Collectors.toList()));
-    Function<Map<ContextKey<String>, Double>, IScalarValue<String>> getResult = m -> {
+    Function<Map<ContextKey<String>, Double>, Scalar<String>> getResult = m -> {
       Context<String> ctx = contextTemplate.createContext(m);
-      IScalarValue<String> x = IScalarValue.var("x", ctx);
-      IScalarValue<String> y = IScalarValue.var("y", ctx);
-      return x.plus(y).times(IScalarValue.constant(-1));
+      Scalar<String> x = Scalar.var("x", ctx);
+      Scalar<String> y = Scalar.var("y", ctx);
+      return x.plus(y).times(Scalar.constant(-1));
     };
-    List<Function<Map<ContextKey<String>, Double>, IScalarValue<String>>> zeroMinimumConstraints =
+    List<Function<Map<ContextKey<String>, Double>, Scalar<String>>> zeroMinimumConstraints =
         new ArrayList<>();
-    zeroMinimumConstraints.add(m -> IScalarValue.var("x", contextTemplate.createContext(m)));
-    zeroMinimumConstraints.add(m -> IScalarValue.var("y", contextTemplate.createContext(m)));
+    zeroMinimumConstraints.add(m -> Scalar.var("x", contextTemplate.createContext(m)));
+    zeroMinimumConstraints.add(m -> Scalar.var("y", contextTemplate.createContext(m)));
     zeroMinimumConstraints.add(m -> {
       Context<String> ctx = contextTemplate.createContext(m);
-      IScalarValue<String> x = IScalarValue.var("x", ctx);
-      IScalarValue<String> y = IScalarValue.var("y", ctx);
-      return x.plus(y.times(IScalarValue.constant(.5))).minus(IScalarValue.constant(3))
-          .times(IScalarValue.constant(-1));
+      Scalar<String> x = Scalar.var("x", ctx);
+      Scalar<String> y = Scalar.var("y", ctx);
+      return x.plus(y.times(Scalar.constant(.5))).minus(Scalar.constant(3))
+          .times(Scalar.constant(-1));
     });
     zeroMinimumConstraints.add(m -> {
       Context<String> ctx = contextTemplate.createContext(m);
-      IScalarValue<String> x = IScalarValue.var("x", ctx);
-      IScalarValue<String> y = IScalarValue.var("y", ctx);
-      return x.times(IScalarValue.constant(.5)).plus(y).minus(IScalarValue.constant(3))
-          .times(IScalarValue.constant(-1));
+      Scalar<String> x = Scalar.var("x", ctx);
+      Scalar<String> y = Scalar.var("y", ctx);
+      return x.times(Scalar.constant(.5)).plus(y).minus(Scalar.constant(3))
+          .times(Scalar.constant(-1));
     });
     Map<ContextKey<String>, Double> initialPoint =
         contextTemplate.createContext(startingPoint).asMap();
-    Solution<IScalarValue<String>, String> result =
-        GradientDescentOptimizer.optimizeWithConstraints(getResult, x -> x, zeroMinimumConstraints,
-            IScalarValue::exp, initialPoint, 1.0, .00001, .00001);
+    Solution<Scalar<String>, String> result =
+        Optimizer.optimizeWithConstraints(getResult, x -> x, zeroMinimumConstraints,
+            Scalar::exp, initialPoint, 1.0, .00001, .00001);
     assertEquals(2.0,
         result.getContext().get(contextTemplate.getContextKey(IndexedKey.scalarKey("x"))),
         TOLERANCE);

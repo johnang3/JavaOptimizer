@@ -11,7 +11,7 @@ import org.junit.Test;
 import angland.optimizer.var.Context;
 import angland.optimizer.var.ContextTemplate;
 import angland.optimizer.var.IndexedKey;
-import angland.optimizer.var.matrix.IMatrixValue;
+import angland.optimizer.var.matrix.Matrix;
 
 public class LstmCellTest {
 
@@ -28,8 +28,8 @@ public class LstmCellTest {
     });
     Context<String> context = ContextTemplate.simpleContext(cMap);
     RnnCell<String> lstmCell = template.create(context);
-    IMatrixValue<String> inHidden = IMatrixValue.var("hidden", 5, 1, context);
-    IMatrixValue<String> inExposed = IMatrixValue.var("exposed", 5, 1, context);
+    Matrix<String> inHidden = Matrix.var("hidden", 5, 1, context);
+    Matrix<String> inExposed = Matrix.var("exposed", 5, 1, context);
 
     RnnStateTuple<String> in = new RnnStateTuple<>(inHidden, inExposed);
     RnnStateTuple<String> out = lstmCell.apply(in);

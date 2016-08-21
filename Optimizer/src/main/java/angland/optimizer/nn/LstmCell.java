@@ -1,16 +1,16 @@
 package angland.optimizer.nn;
 
 import angland.optimizer.var.Context;
-import angland.optimizer.var.matrix.IMatrixValue;
-import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.matrix.Matrix;
+import angland.optimizer.var.scalar.Scalar;
 
 
 public class LstmCell<VarKey> implements RnnCell<String> {
 
   private FeedForwardLayer<String> retain;
 
-  private static final IScalarValue<String> one = IScalarValue.constant(1);
-  private static final IScalarValue<String> minusOne = IScalarValue.constant(1);
+  private static final Scalar<String> one = Scalar.constant(1);
+  private static final Scalar<String> minusOne = Scalar.constant(1);
   private final int size;
   private FeedForwardLayer<String> modify;
   private FeedForwardLayer<String> select;
@@ -41,22 +41,22 @@ public class LstmCell<VarKey> implements RnnCell<String> {
 
   public RnnStateTuple<String> apply(RnnStateTuple<String> input) {
 
-    IMatrixValue<String> retainHidden = retain.apply(input.getExposedState());
+    Matrix<String> retainHidden = retain.apply(input.getExposedState());
 
-    IMatrixValue<String> replaceHidden = minusOne.times(retainHidden).transform(s -> s.plus(one));
+    Matrix<String> replaceHidden = minusOne.times(retainHidden).transform(s -> s.plus(one));
 
-    IMatrixValue<String> modifier = modify.apply(input.getExposedState());
-    IMatrixValue<String> replaceModify = replaceHidden.pointwiseMultiply(modifier);
+    Matrix<String> modifier = modify.apply(input.getExposedState());
+    Matrix<String> replaceModify = replaceHidden.pointwiseMultiply(modifier);
 
-    IMatrixValue<String> hiddenModified =
+    Matrix<String> hiddenModified =
         input.getHiddenState().pointwiseMultiply(retainHidden).plus(replaceModify);
 
 
-    IMatrixValue<String> selector = select.apply(input.getExposedState());
+    Matrix<String> selector = select.apply(input.getExposedState());
 
-    IMatrixValue<String> cellOutput = selector.pointwiseMultiply(hiddenModified);
+    Matrix<String> cellOutput = selector.pointwiseMultiply(hiddenModified);
 
-    return new RnnStateTuple<>(hiddenModified.transform(IScalarValue::cache),
+    return new RnnStateTuple<>(hiddenModified.transform(Scalar::cache),
         cellOutput.transform(x -> x.clipGradient(gradientClipThreshold)));
   }
 

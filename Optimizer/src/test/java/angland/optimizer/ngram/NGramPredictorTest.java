@@ -8,15 +8,15 @@ import java.util.stream.Collectors;
 
 import org.junit.Test;
 
+import angland.optimizer.Optimizer;
+import angland.optimizer.Range;
 import angland.optimizer.nn.LstmCellTemplate;
 import angland.optimizer.nn.PeepholeLstmCellTemplate;
 import angland.optimizer.nn.RnnCellTemplate;
-import angland.optimizer.optimizer.GradientDescentOptimizer;
-import angland.optimizer.optimizer.Range;
 import angland.optimizer.var.Context;
 import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.ContextTemplate;
-import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.scalar.Scalar;
 
 public class NGramPredictorTest {
 
@@ -64,11 +64,11 @@ public class NGramPredictorTest {
     input.add(1);
     for (int i = 0; i < 15; ++i) {
       System.out.println(predictor.predictNext(input, 5, -1));
-      IScalarValue<String> loss = predictor.getLoss(input, 5);
+      Scalar<String> loss = predictor.getLoss(input, 5);
       System.out.println(loss.value());
 
       context =
-          contextTemplate.createContext(GradientDescentOptimizer.step(loss, context.asMap(),
+          contextTemplate.createContext(Optimizer.step(loss, context.asMap(),
               variableRanges, .2));
       predictor = new NGramPredictor(10, template, context, false);
     }

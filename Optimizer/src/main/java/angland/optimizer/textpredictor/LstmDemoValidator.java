@@ -19,7 +19,7 @@ import angland.optimizer.nn.RnnCellTemplate;
 import angland.optimizer.saver.StringContext;
 import angland.optimizer.var.Context;
 import angland.optimizer.var.ContextTemplate;
-import angland.optimizer.var.scalar.IScalarValue;
+import angland.optimizer.var.scalar.Scalar;
 
 public class LstmDemoValidator {
 
@@ -77,11 +77,11 @@ public class LstmDemoValidator {
     Context<String> context = contextTemplate.createContext(StringContext.loadContext(contextFile));
 
     NGramPredictor predictor = new NGramPredictor(vocabSize, template, context, true);
-    IScalarValue<String> loss = IScalarValue.constant(0.0);
+    Scalar<String> loss = Scalar.constant(0.0);
     for (List<Integer> sentence : trainSentences) {
       loss = loss.plus(predictor.getLoss(sentence, samples)).cache();
     }
-    loss = loss.divide(IScalarValue.constant(trainSentences.size()));
+    loss = loss.divide(Scalar.constant(trainSentences.size()));
     System.out.println("Loss: " + loss.value());
   }
 }
