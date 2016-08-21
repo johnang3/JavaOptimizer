@@ -13,6 +13,13 @@ import angland.optimizer.var.scalar.MappedDerivativeScalar;
 import angland.optimizer.var.scalar.Scalar;
 import angland.optimizer.var.scalar.StreamingSum;
 
+/**
+ * Encapsulates a matrix of Scalars.
+ * 
+ * @author John Angland
+ *
+ * @param <VarKey>
+ */
 public interface Matrix<VarKey> {
 
   public int getHeight();

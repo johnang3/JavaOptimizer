@@ -110,11 +110,26 @@ public class Optimizer {
   }
 
 
+  /**
+   * Find a local minimum for the given objective function, given the specified constraints.
+   * 
+   * @param getResult - Create a Result object from the given context
+   * @param getObjective - Extract the objective value from a Result
+   * @param zeroMinimumConstraints - A list of constraints
+   * @param penaltyTransform - A unary operator to be invoked on the sum of constraint violations. Big
+   *        O should be greater than that of the objective function.
+   * @param initialContext - The starting point.
+   * @param step - The initial step distance.
+   * @param minStep - The minimum step distance that will be bothered with.
+   * @param exceedanceTolerance - The highest amount of total constraint violation that will be
+   *        tolerated.
+   * @return
+   */
   public static <Result, VarKey> Solution<Result, VarKey> optimizeWithConstraints(
       Function<Map<IndexedKey<VarKey>, Double>, Result> getResult,
       Function<Result, Scalar<VarKey>> getObjective,
       List<Function<Map<IndexedKey<VarKey>, Double>, Scalar<VarKey>>> zeroMinimumConstraints,
-      UnaryOperator<Scalar<VarKey>> penaltyScalar, Map<IndexedKey<VarKey>, Double> initialContext,
+      UnaryOperator<Scalar<VarKey>> penaltyTransform, Map<IndexedKey<VarKey>, Double> initialContext,
       double step, double minStep, double exceedanceTolerance) {
     Scalar<VarKey> penaltyMultiplier = Scalar.constant(1.0);
     Scalar<VarKey> zero = Scalar.constant(0);
@@ -137,7 +152,7 @@ public class Optimizer {
       Function<ConstrainedSolution<VarKey, Result>, Scalar<VarKey>> getPenalizedObjective =
           cs -> {
             return getObjective.apply(cs.result).plus(
-                penaltyScalar.apply(cs.unweightedShortfallSum.times(penaltyMultiplierFinal)));
+                penaltyTransform.apply(cs.unweightedShortfallSum.times(penaltyMultiplierFinal)));
           };
 
       penaltySolution =
