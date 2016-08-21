@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.junit.Test;
 
@@ -13,9 +12,7 @@ import angland.optimizer.Range;
 import angland.optimizer.nn.LstmCellTemplate;
 import angland.optimizer.nn.PeepholeLstmCellTemplate;
 import angland.optimizer.nn.RnnCellTemplate;
-import angland.optimizer.var.Context;
-import angland.optimizer.var.ContextKey;
-import angland.optimizer.var.ContextTemplate;
+import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.scalar.Scalar;
 
 public class NGramPredictorTest {
@@ -25,8 +22,7 @@ public class NGramPredictorTest {
   public void testOutputHasNoException() {
     RnnCellTemplate template = new LstmCellTemplate("cell", 10, .005, false);
     NGramPredictor predictor =
-        new NGramPredictor(20, template, ContextTemplate.simpleContext(NGramPredictor
-            .randomizedContext(20, template)), false);
+        new NGramPredictor(20, template, NGramPredictor.randomizedContext(20, template), false);
     List<Integer> input = new ArrayList<>();
     input.add(0);
     input.add(1);
@@ -37,8 +33,7 @@ public class NGramPredictorTest {
   public void testLossHasNoExceptions() {
     RnnCellTemplate template = new LstmCellTemplate("cell", 10, .005, false);
     NGramPredictor predictor =
-        new NGramPredictor(20, template, ContextTemplate.simpleContext(NGramPredictor
-            .randomizedContext(20, template)), false);
+        new NGramPredictor(20, template, NGramPredictor.randomizedContext(20, template), false);
     List<Integer> input = new ArrayList<>();
     input.add(1);
     input.add(2);
@@ -50,12 +45,14 @@ public class NGramPredictorTest {
   @Test
   public void testLossReduction() {
     RnnCellTemplate template = new PeepholeLstmCellTemplate("cell", 6, .005, false);
-    ContextTemplate<String> contextTemplate =
-        new ContextTemplate<>(NGramPredictor.getKeys(10, template).collect(Collectors.toList()));
-    Context<String> context = contextTemplate.randomContext();
-    Map<ContextKey<String>, Range> variableRanges = new HashMap<>();
-    context.getContextTemplate().getContextKeys()
-        .forEach((k) -> variableRanges.put(k, new Range(-1, 1)));
+
+    Map<IndexedKey<String>, Double> startingPoint = new HashMap<>();
+    Map<IndexedKey<String>, Range> variableRanges = new HashMap<>();
+    NGramPredictor.getKeys(10, template).forEach((k) -> {
+      variableRanges.put(k, new Range(-1, 1));
+      startingPoint.put(k, 2 * Math.random() - 1);
+    });
+    Map<IndexedKey<String>, Double> context = startingPoint;
     NGramPredictor predictor = new NGramPredictor(10, template, context, false);
     List<Integer> input = new ArrayList<>();
     input.add(1);
@@ -67,9 +64,7 @@ public class NGramPredictorTest {
       Scalar<String> loss = predictor.getLoss(input, 5);
       System.out.println(loss.value());
 
-      context =
-          contextTemplate.createContext(Optimizer.step(loss, context.asMap(),
-              variableRanges, .2));
+      context = Optimizer.step(loss, context, variableRanges, .2);
       predictor = new NGramPredictor(10, template, context, false);
     }
   }

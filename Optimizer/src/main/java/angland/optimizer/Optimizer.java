@@ -7,7 +7,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-import angland.optimizer.var.ContextKey;
+import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.scalar.Scalar;
 import angland.optimizer.var.scalar.StreamingSum;
 import angland.optimizer.vec.MathUtils;
@@ -22,14 +22,14 @@ public class Optimizer {
    * 
    * @return
    */
-  public static <Result, VarType> Map<ContextKey<VarType>, Double> step(
-      Scalar<VarType> calculation, Map<ContextKey<VarType>, Double> context,
-      Map<ContextKey<VarType>, Range> variableRanges, double gradientMultiplier) {
+  public static <Result, VarType> Map<IndexedKey<VarType>, Double> step(
+      Scalar<VarType> calculation, Map<IndexedKey<VarType>, Double> context,
+      Map<IndexedKey<VarType>, Range> variableRanges, double gradientMultiplier) {
     if (gradientMultiplier <= 0) {
       throw new RuntimeException("MaxStepDistance must be greater than 0.");
     }
-    Map<ContextKey<VarType>, Double> result = new HashMap<>();
-    for (Map.Entry<ContextKey<VarType>, Double> contextEntry : context.entrySet()) {
+    Map<IndexedKey<VarType>, Double> result = new HashMap<>();
+    for (Map.Entry<IndexedKey<VarType>, Double> contextEntry : context.entrySet()) {
       if (contextEntry.getValue() == null) {
         throw new RuntimeException("Null value for entry of key " + contextEntry.getKey());
       }
@@ -52,20 +52,18 @@ public class Optimizer {
     return result;
   }
 
-  public static <Result, VarType> Map<ContextKey<VarType>, Double> stepNormalized(
-      Scalar<VarType> calculation, Map<ContextKey<VarType>, Double> context,
-      double stepDistance) {
-    Map<ContextKey<VarType>, Double> result =
+  public static <Result, VarType> Map<IndexedKey<VarType>, Double> stepNormalized(
+      Scalar<VarType> calculation, Map<IndexedKey<VarType>, Double> context, double stepDistance) {
+    Map<IndexedKey<VarType>, Double> result =
         MathUtils.add(context,
             MathUtils.adjustToMagnitude(calculation.getGradient(), -stepDistance));
     return result;
   }
 
   public static <Result, VarKey> Solution<Result, VarKey> stepToMinimum(
-      Function<Map<ContextKey<VarKey>, Double>, Result> getResult,
-      Function<Result, Scalar<VarKey>> getObjective,
-      Map<ContextKey<VarKey>, Range> variableRanges,
-      Map<ContextKey<VarKey>, Double> initialContext, double step, double minStep) {
+      Function<Map<IndexedKey<VarKey>, Double>, Result> getResult,
+      Function<Result, Scalar<VarKey>> getObjective, Map<IndexedKey<VarKey>, Range> variableRanges,
+      Map<IndexedKey<VarKey>, Double> initialContext, double step, double minStep) {
     Solution<Result, VarKey> bestResult = new Solution<>(initialContext, getResult, getObjective);
     while (step > minStep) {
       Solution<Result, VarKey> next = null;
@@ -81,9 +79,9 @@ public class Optimizer {
   }
 
   public static <Result, VarKey> Solution<Result, VarKey> normalizedStepToMinimum(
-      Function<Map<ContextKey<VarKey>, Double>, Result> getResult,
+      Function<Map<IndexedKey<VarKey>, Double>, Result> getResult,
       Function<Result, Scalar<VarKey>> getObjective,
-      Map<ContextKey<VarKey>, Double> initialContext, double step, double minStep) {
+      Map<IndexedKey<VarKey>, Double> initialContext, double step, double minStep) {
     Solution<Result, VarKey> bestResult = new Solution<>(initialContext, getResult, getObjective);
     while (step > minStep) {
       Solution<Result, VarKey> next = null;
@@ -113,20 +111,19 @@ public class Optimizer {
 
 
   public static <Result, VarKey> Solution<Result, VarKey> optimizeWithConstraints(
-      Function<Map<ContextKey<VarKey>, Double>, Result> getResult,
+      Function<Map<IndexedKey<VarKey>, Double>, Result> getResult,
       Function<Result, Scalar<VarKey>> getObjective,
-      List<Function<Map<ContextKey<VarKey>, Double>, Scalar<VarKey>>> zeroMinimumConstraints,
-      UnaryOperator<Scalar<VarKey>> penaltyScalar,
-      Map<ContextKey<VarKey>, Double> initialContext, double step, double minStep,
-      double exceedanceTolerance) {
+      List<Function<Map<IndexedKey<VarKey>, Double>, Scalar<VarKey>>> zeroMinimumConstraints,
+      UnaryOperator<Scalar<VarKey>> penaltyScalar, Map<IndexedKey<VarKey>, Double> initialContext,
+      double step, double minStep, double exceedanceTolerance) {
     Scalar<VarKey> penaltyMultiplier = Scalar.constant(1.0);
     Scalar<VarKey> zero = Scalar.constant(0);
     Scalar<VarKey> minusOne = Scalar.constant(-1);
-    Map<ContextKey<VarKey>, Double> currentContext = initialContext;
+    Map<IndexedKey<VarKey>, Double> currentContext = initialContext;
     Scalar<VarKey> unweightedPenalty = null;
     Solution<ConstrainedSolution<VarKey, Result>, VarKey> penaltySolution = null;
     do {
-      Function<Map<ContextKey<VarKey>, Double>, ConstrainedSolution<VarKey, Result>> getConstrainedSolution =
+      Function<Map<IndexedKey<VarKey>, Double>, ConstrainedSolution<VarKey, Result>> getConstrainedSolution =
           ctx -> {
             Result r = getResult.apply(ctx);
             List<Scalar<VarKey>> constraintViolations =

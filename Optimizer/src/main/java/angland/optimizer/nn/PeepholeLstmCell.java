@@ -1,6 +1,8 @@
 package angland.optimizer.nn;
 
-import angland.optimizer.var.Context;
+import java.util.Map;
+
+import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.matrix.Matrix;
 import angland.optimizer.var.scalar.Scalar;
 
@@ -15,7 +17,7 @@ public class PeepholeLstmCell implements RnnCell<String> {
   private final int size;
 
 
-  public PeepholeLstmCell(String varPrefix, int size, Context<String> context,
+  public PeepholeLstmCell(String varPrefix, int size, Map<IndexedKey<String>, Double> context,
       double gradientClipThreshold, boolean constant) {
     this.retainLayer =
         new FeedForwardLayer<>(2 * size, size, v -> v.sigmoid().clipGradient(gradientClipThreshold)

@@ -2,7 +2,7 @@ package angland.optimizer.var.scalar;
 
 import java.util.function.Consumer;
 
-import angland.optimizer.var.ContextKey;
+import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.KeyedDerivative;
 
 public class ClippedGradientScalar<VarKey> implements Scalar<VarKey> {
@@ -38,7 +38,7 @@ public class ClippedGradientScalar<VarKey> implements Scalar<VarKey> {
   }
 
   @Override
-  public double d(ContextKey<VarKey> key) {
+  public double d(IndexedKey<VarKey> key) {
     double deriv = source.d(key);
     return Math.abs(deriv) >= clipBelow ? deriv : 0;
   }

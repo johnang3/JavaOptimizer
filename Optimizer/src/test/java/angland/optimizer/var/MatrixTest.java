@@ -24,23 +24,22 @@ public class MatrixTest {
    */
   @Test
   public void testMatrixMultiply() {
-    Map<IndexedKey<String>, Double> cMap = new HashMap<>();
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
 
-    cMap.put(IndexedKey.matrixKey("left", 0, 0), 1.0);
-    cMap.put(IndexedKey.matrixKey("left", 0, 1), 2.0);
-    cMap.put(IndexedKey.matrixKey("left", 0, 2), 3.0);
-    cMap.put(IndexedKey.matrixKey("left", 1, 0), 4.0);
-    cMap.put(IndexedKey.matrixKey("left", 1, 1), 5.0);
-    cMap.put(IndexedKey.matrixKey("left", 1, 2), 6.0);
+    context.put(IndexedKey.matrixKey("left", 0, 0), 1.0);
+    context.put(IndexedKey.matrixKey("left", 0, 1), 2.0);
+    context.put(IndexedKey.matrixKey("left", 0, 2), 3.0);
+    context.put(IndexedKey.matrixKey("left", 1, 0), 4.0);
+    context.put(IndexedKey.matrixKey("left", 1, 1), 5.0);
+    context.put(IndexedKey.matrixKey("left", 1, 2), 6.0);
 
-    cMap.put(IndexedKey.matrixKey("right", 0, 0), 1.0);
-    cMap.put(IndexedKey.matrixKey("right", 0, 1), 2.0);
-    cMap.put(IndexedKey.matrixKey("right", 1, 0), 3.0);
-    cMap.put(IndexedKey.matrixKey("right", 1, 1), 4.0);
-    cMap.put(IndexedKey.matrixKey("right", 2, 0), 5.0);
-    cMap.put(IndexedKey.matrixKey("right", 2, 1), 6.0);
+    context.put(IndexedKey.matrixKey("right", 0, 0), 1.0);
+    context.put(IndexedKey.matrixKey("right", 0, 1), 2.0);
+    context.put(IndexedKey.matrixKey("right", 1, 0), 3.0);
+    context.put(IndexedKey.matrixKey("right", 1, 1), 4.0);
+    context.put(IndexedKey.matrixKey("right", 2, 0), 5.0);
+    context.put(IndexedKey.matrixKey("right", 2, 1), 6.0);
 
-    Context<String> context = ContextTemplate.simpleContext(cMap);
     Matrix<String> leftMatrix = Matrix.var("left", 2, 3, context);
     Matrix<String> rightMatrix = Matrix.var("right", 3, 2, context);
     Matrix<String> product = leftMatrix.times(rightMatrix);
@@ -61,12 +60,11 @@ public class MatrixTest {
 
   @Test
   public void testMatrixAdd() {
-    Map<IndexedKey<String>, Double> cMap = new HashMap<>();
-    cMap.put(IndexedKey.matrixKey("m", 0, 0), 1.0);
-    cMap.put(IndexedKey.matrixKey("m", 0, 1), 2.0);
-    cMap.put(IndexedKey.matrixKey("m", 1, 0), 4.0);
-    cMap.put(IndexedKey.matrixKey("m", 1, 1), 5.0);
-    Context<String> context = ContextTemplate.simpleContext(cMap);
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    context.put(IndexedKey.matrixKey("m", 0, 0), 1.0);
+    context.put(IndexedKey.matrixKey("m", 0, 1), 2.0);
+    context.put(IndexedKey.matrixKey("m", 1, 0), 4.0);
+    context.put(IndexedKey.matrixKey("m", 1, 1), 5.0);
     Matrix<String> leftMatrix = Matrix.var("m", 2, 2, context);
     Matrix<String> sum = leftMatrix.plus(leftMatrix);
     assertEquals(2, sum.getHeight());
@@ -79,16 +77,16 @@ public class MatrixTest {
 
   @Test
   public void testMatrixVCat() {
-    Map<IndexedKey<String>, Double> cMap = new HashMap<>();
-    cMap.put(IndexedKey.matrixKey("a", 0, 0), 1.0);
-    cMap.put(IndexedKey.matrixKey("a", 0, 1), 2.0);
-    cMap.put(IndexedKey.matrixKey("a", 1, 0), 3.0);
-    cMap.put(IndexedKey.matrixKey("a", 1, 1), 4.0);
-    cMap.put(IndexedKey.matrixKey("b", 0, 0), 5.0);
-    cMap.put(IndexedKey.matrixKey("b", 0, 1), 6.0);
-    cMap.put(IndexedKey.matrixKey("b", 1, 0), 7.0);
-    cMap.put(IndexedKey.matrixKey("b", 1, 1), 8.0);
-    Context<String> context = ContextTemplate.simpleContext(cMap);
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    context.put(IndexedKey.matrixKey("a", 0, 0), 1.0);
+    context.put(IndexedKey.matrixKey("a", 0, 1), 2.0);
+    context.put(IndexedKey.matrixKey("a", 1, 0), 3.0);
+    context.put(IndexedKey.matrixKey("a", 1, 1), 4.0);
+    context.put(IndexedKey.matrixKey("b", 0, 0), 5.0);
+    context.put(IndexedKey.matrixKey("b", 0, 1), 6.0);
+    context.put(IndexedKey.matrixKey("b", 1, 0), 7.0);
+    context.put(IndexedKey.matrixKey("b", 1, 1), 8.0);
+
     Matrix<String> a = Matrix.var("a", 2, 2, context);
     Matrix<String> b = Matrix.var("b", 2, 2, context);
     Matrix<String> ab = a.vCat(b);
@@ -104,15 +102,14 @@ public class MatrixTest {
 
   @Test
   public void testChooseAndRandom() {
-    Map<IndexedKey<String>, Double> cMap = new HashMap<>();
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
     int rowCount = 25;
     int forcedIndex = 5;
     int sampleCount = 9;
     for (int i = 0; i < rowCount; ++i) {
-      cMap.put(IndexedKey.matrixKey("m", i, 0), (double) i + 1);
+      context.put(IndexedKey.matrixKey("m", i, 0), (double) i + 1);
     }
-    Matrix<String> m =
-        Matrix.var("m", rowCount, 1, ContextTemplate.simpleContext(cMap));
+    Matrix<String> m = Matrix.var("m", rowCount, 1, context);
     Matrix<String> sample = m.selectAndSampleRows(forcedIndex, sampleCount);
     assertEquals(forcedIndex + 1, sample.get(forcedIndex, 0).value(), TOLERANCE);
     int nonZeroCount = 0;
@@ -139,8 +136,7 @@ public class MatrixTest {
       context.put(IndexedKey.matrixKey("m", i, 0), (double) i + 1);
     }
 
-    Matrix<String> m =
-        Matrix.var("m", rowCount, 1, ContextTemplate.simpleContext(context));
+    Matrix<String> m = Matrix.var("m", rowCount, 1, context);
     Matrix<String> sample = m.selectAndSampleRows(forcedIndex, sampleCount);
     assertEquals(forcedIndex + 1, sample.get(forcedIndex, 0).value(), TOLERANCE);
     int nonZeroCount = 0;
@@ -164,8 +160,7 @@ public class MatrixTest {
     context.put(IndexedKey.matrixKey("m", 0, 1), 2.0);
     context.put(IndexedKey.matrixKey("m", 1, 0), 4.0);
     context.put(IndexedKey.matrixKey("m", 1, 1), 5.0);
-    Matrix<String> matrix =
-        Matrix.var("m", 2, 2, ContextTemplate.simpleContext(context));
+    Matrix<String> matrix = Matrix.var("m", 2, 2, context);
     Scalar<String> scalar = Scalar.constant(3);
     Matrix<String> product = scalar.times(matrix);
     assertEquals(2, product.getHeight());
@@ -185,8 +180,7 @@ public class MatrixTest {
     context.put(IndexedKey.matrixKey("m", 1, 0), 4.0);
     context.put(IndexedKey.matrixKey("m", 1, 1), 5.0);
     context.put(IndexedKey.matrixKey("m", 1, 2), 6.0);
-    Matrix<String> matrix =
-        Matrix.var("m", 2, 3, ContextTemplate.simpleContext(context));
+    Matrix<String> matrix = Matrix.var("m", 2, 3, context);
     Matrix<String> transpose = matrix.transpose();
     assertEquals(3, transpose.getHeight());
     assertEquals(2, transpose.getWidth());
@@ -200,17 +194,16 @@ public class MatrixTest {
 
   @Test
   public void testColumnProximity() {
-    Map<IndexedKey<String>, Double> cMap = new HashMap<>();
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
 
-    cMap.put(IndexedKey.matrixKey("a", 0, 0), 3.0);
-    cMap.put(IndexedKey.matrixKey("a", 0, 1), 6.0);
-    cMap.put(IndexedKey.matrixKey("a", 1, 0), 4.0);
-    cMap.put(IndexedKey.matrixKey("a", 1, 1), -8.0);
-    cMap.put(IndexedKey.matrixKey("b", 0, 0), 0.0);
-    cMap.put(IndexedKey.matrixKey("b", 1, 0), 0.0);
-    Context<String> c = ContextTemplate.simpleContext(cMap);
-    Matrix<String> a = Matrix.var("a", 2, 2, c);
-    Matrix<String> b = Matrix.var("b", 2, 1, c);
+    context.put(IndexedKey.matrixKey("a", 0, 0), 3.0);
+    context.put(IndexedKey.matrixKey("a", 0, 1), 6.0);
+    context.put(IndexedKey.matrixKey("a", 1, 0), 4.0);
+    context.put(IndexedKey.matrixKey("a", 1, 1), -8.0);
+    context.put(IndexedKey.matrixKey("b", 0, 0), 0.0);
+    context.put(IndexedKey.matrixKey("b", 1, 0), 0.0);
+    Matrix<String> a = Matrix.var("a", 2, 2, context);
+    Matrix<String> b = Matrix.var("b", 2, 1, context);
     Matrix<String> norm = a.columnProximity(b);
     assertEquals(norm.getHeight(), 1);
     assertEquals(norm.getWidth(), 2);
@@ -220,11 +213,11 @@ public class MatrixTest {
 
   @Test
   public void testMaxIdx() {
-    Map<IndexedKey<String>, Double> cMap = new HashMap<>();
-    cMap.put(IndexedKey.matrixKey("a", 0, 0), 3.0);
-    cMap.put(IndexedKey.matrixKey("a", 1, 0), 6.0);
-    cMap.put(IndexedKey.matrixKey("a", 2, 0), 4.0);
-    Matrix<String> a = Matrix.var("a", 3, 1, ContextTemplate.simpleContext(cMap));
+    Map<IndexedKey<String>, Double> context = new HashMap<>();
+    context.put(IndexedKey.matrixKey("a", 0, 0), 3.0);
+    context.put(IndexedKey.matrixKey("a", 1, 0), 6.0);
+    context.put(IndexedKey.matrixKey("a", 2, 0), 4.0);
+    Matrix<String> a = Matrix.var("a", 3, 1, context);
     Scalar<String> maxIdx = a.maxIdx();
     assertEquals(1, maxIdx.value(), TOLERANCE);
   }
@@ -240,10 +233,8 @@ public class MatrixTest {
         context.put(IndexedKey.matrixKey("right", i, j), Math.random());
       }
     }
-    Matrix<String> left =
-        Matrix.var("left", size, size, ContextTemplate.simpleContext(context));
-    Matrix<String> right =
-        Matrix.var("right", size, size, ContextTemplate.simpleContext(context));
+    Matrix<String> left = Matrix.var("left", size, size, context);
+    Matrix<String> right = Matrix.var("right", size, size, context);
     // warmup
     left.times(right);
     long start = System.currentTimeMillis();
@@ -265,10 +256,8 @@ public class MatrixTest {
         context.put(IndexedKey.matrixKey("right", i, j), Math.random());
       }
     }
-    Matrix<String> left =
-        Matrix.var("left", 1, size, ContextTemplate.simpleContext(context));
-    Matrix<String> right =
-        Matrix.var("right", size, size, ContextTemplate.simpleContext(context));
+    Matrix<String> left = Matrix.var("left", 1, size, context);
+    Matrix<String> right = Matrix.var("right", size, size, context);
     // warmup
     for (int i = 0; i < 10; ++i) {
       left.times(right);
@@ -291,8 +280,7 @@ public class MatrixTest {
     context.put(IndexedKey.matrixKey("m", 1, 1), 5.0);
     context.put(IndexedKey.matrixKey("m", 2, 0), 7.0);
     context.put(IndexedKey.matrixKey("m", 2, 1), 8.0);
-    Matrix<String> matrix =
-        Matrix.var("m", 3, 2, ContextTemplate.simpleContext(context));
+    Matrix<String> matrix = Matrix.var("m", 3, 2, context);
     Matrix<String> col = matrix.getColumn(Scalar.constant(1));
     assertEquals(1, col.getWidth());
     assertEquals(3, col.getHeight());
@@ -309,8 +297,7 @@ public class MatrixTest {
     context.put(IndexedKey.matrixKey("m", 3, 0), 5.0);
     context.put(IndexedKey.matrixKey("m", 4, 0), 7.0);
     context.put(IndexedKey.matrixKey("m", 5, 0), 8.0);
-    Matrix<String> matrix =
-        Matrix.var("m", 6, 1, ContextTemplate.simpleContext(context));
+    Matrix<String> matrix = Matrix.var("m", 6, 1, context);
     Matrix<String> softmax = matrix.softmax();
     assertEquals(1.0, softmax.elementSumStream().value(), TOLERANCE);
   }

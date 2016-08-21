@@ -2,7 +2,7 @@ package angland.optimizer.var.scalar;
 
 import java.util.function.Consumer;
 
-import angland.optimizer.var.ContextKey;
+import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.KeyedDerivative;
 
 public class UnaryScalarOperator<VarKey> implements Scalar<VarKey> {
@@ -27,7 +27,7 @@ public class UnaryScalarOperator<VarKey> implements Scalar<VarKey> {
   }
 
   @Override
-  public double d(ContextKey<VarKey> key) {
+  public double d(IndexedKey<VarKey> key) {
     return fPrimeOfX == 0 ? 0 : fPrimeOfX * arg.d(key);
   }
 

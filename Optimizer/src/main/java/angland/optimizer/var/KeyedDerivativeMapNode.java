@@ -6,7 +6,7 @@ public class KeyedDerivativeMapNode<VarKey> extends KeyedDerivative<VarKey> {
   public KeyedDerivativeMapNode<VarKey> next;
 
 
-  public KeyedDerivativeMapNode(ContextKey<VarKey> key, double value) {
+  public KeyedDerivativeMapNode(IndexedKey<VarKey> key, double value) {
     super(key, value);
   }
 

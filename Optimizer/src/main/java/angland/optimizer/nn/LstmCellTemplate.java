@@ -1,8 +1,8 @@
 package angland.optimizer.nn;
 
+import java.util.Map;
 import java.util.stream.Stream;
 
-import angland.optimizer.var.Context;
 import angland.optimizer.var.IndexedKey;
 
 public class LstmCellTemplate implements RnnCellTemplate {
@@ -21,7 +21,7 @@ public class LstmCellTemplate implements RnnCellTemplate {
     this.isConstant = isConstant;
   }
 
-  public RnnCell<String> create(Context<String> context) {
+  public RnnCell<String> create(Map<IndexedKey<String>, Double> context) {
     return new LstmCell<>(varPrefix, size, context, gradientClipThreshold, isConstant);
   }
 

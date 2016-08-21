@@ -7,13 +7,10 @@ import java.util.Map;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
-import angland.optimizer.var.Context;
-import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.matrix.ArrayMatrixValue.Builder;
-import angland.optimizer.var.scalar.Scalar;
 import angland.optimizer.var.scalar.MappedDerivativeScalar;
-import angland.optimizer.var.scalar.ScalarConstant;
+import angland.optimizer.var.scalar.Scalar;
 import angland.optimizer.var.scalar.StreamingSum;
 
 public interface Matrix<VarKey> {
@@ -25,23 +22,22 @@ public interface Matrix<VarKey> {
   public Scalar<VarKey> get(int row, int column);
 
   public static <VarKey> Matrix<VarKey> var(VarKey key, int height, int width,
-      Context<VarKey> context) {
+      Map<IndexedKey<VarKey>, Double> context) {
     ArrayMatrixValue.Builder<VarKey> builder = new ArrayMatrixValue.Builder<VarKey>(height, width);
     for (int i = 0; i < height; ++i) {
       for (int j = 0; j < width; ++j) {
         IndexedKey<VarKey> indexedKey = IndexedKey.matrixKey(key, i, j);
-        ContextKey<VarKey> contextKey = context.getContextTemplate().getContextKey(indexedKey);
-        if (contextKey == null) {
+        if (indexedKey == null) {
           throw new RuntimeException("Null context key for indexed key " + indexedKey);
         }
-        builder.set(i, j, Scalar.var(contextKey, context));
+        builder.set(i, j, Scalar.var(indexedKey, context));
       }
     }
     return builder.build();
   }
 
   public static <VarKey> Matrix<VarKey> varOrConst(VarKey key, int height, int width,
-      Context<VarKey> context, boolean constant) {
+      Map<IndexedKey<VarKey>, Double> context, boolean constant) {
     Matrix<VarKey> var = var(key, height, width, context);
     return constant ? var.toConstant() : var;
   }
@@ -92,8 +88,7 @@ public interface Matrix<VarKey> {
   }
 
 
-  public default Matrix<VarKey> pointwise(Matrix<VarKey> other,
-      BinaryOperator<Scalar<VarKey>> op) {
+  public default Matrix<VarKey> pointwise(Matrix<VarKey> other, BinaryOperator<Scalar<VarKey>> op) {
     if (this.getHeight() != other.getHeight()) {
       throw new RuntimeException(
           "Cannot perform pointwise operations matrices of differing heights.");
@@ -127,8 +122,7 @@ public interface Matrix<VarKey> {
     return columnProximity(other, list);
   }
 
-  public default Matrix<VarKey> columnProximity(Matrix<VarKey> other,
-      List<Integer> selectedIndices) {
+  public default Matrix<VarKey> columnProximity(Matrix<VarKey> other, List<Integer> selectedIndices) {
     if (this.getHeight() != other.getHeight()) {
       throw new IllegalArgumentException("Cannot compare columns in matrices of differing heights");
     }
@@ -150,8 +144,8 @@ public interface Matrix<VarKey> {
     return newMatrix.build();
   }
 
-  public default Matrix<VarKey> sampledColumnProximity(Matrix<VarKey> other,
-      int requiredIndex, int samples) {
+  public default Matrix<VarKey> sampledColumnProximity(Matrix<VarKey> other, int requiredIndex,
+      int samples) {
     if (samples > getWidth()) {
       throw new IllegalArgumentException("Samples out of range: " + samples);
     }
@@ -186,13 +180,13 @@ public interface Matrix<VarKey> {
           Scalar<VarKey> right = other.get(k, j);
           sumBuilder.incrementValue(left.value() * right.value());
 
-          for (Map.Entry<ContextKey<VarKey>, Double> entry : left.getGradient().entrySet()) {
+          for (Map.Entry<IndexedKey<VarKey>, Double> entry : left.getGradient().entrySet()) {
             if (entry.getValue() != 0) {
               sumBuilder.getGradient().merge(entry.getKey(), entry.getValue() * right.value());
 
             }
           }
-          for (Map.Entry<ContextKey<VarKey>, Double> entry : right.getGradient().entrySet()) {
+          for (Map.Entry<IndexedKey<VarKey>, Double> entry : right.getGradient().entrySet()) {
             if (entry.getValue() != 0) {
               sumBuilder.getGradient().merge(entry.getKey(), entry.getValue() * left.value());
             }
@@ -409,11 +403,10 @@ public interface Matrix<VarKey> {
         maxIdx = i;
       }
     }
-    return new ScalarConstant<>(maxIdx);
+    return Scalar.constant(maxIdx);
   }
 
-  public default Matrix<VarKey> transform(
-      Function<Scalar<VarKey>, Scalar<VarKey>> transform) {
+  public default Matrix<VarKey> transform(Function<Scalar<VarKey>, Scalar<VarKey>> transform) {
     ArrayMatrixValue.Builder<VarKey> builder =
         new ArrayMatrixValue.Builder<>(getHeight(), getWidth());
     for (int i = 0; i < getHeight(); ++i) {

@@ -1,6 +1,8 @@
 package angland.optimizer.nn;
 
-import angland.optimizer.var.Context;
+import java.util.Map;
+
+import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.matrix.Matrix;
 import angland.optimizer.var.scalar.Scalar;
 
@@ -12,8 +14,8 @@ public class StoredPotentialRnnCell implements RnnCell<String> {
   private final double gradientClipThreshold;
 
 
-  public StoredPotentialRnnCell(String varPrefix, int size, Context<String> context,
-      double gradientClipThreshold, boolean isConstant) {
+  public StoredPotentialRnnCell(String varPrefix, int size,
+      Map<IndexedKey<String>, Double> context, double gradientClipThreshold, boolean isConstant) {
     super();
     this.size = size;
     this.updateWeights = Matrix.var("adjust_weights", size, 2 * size, context);

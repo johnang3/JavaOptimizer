@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import angland.optimizer.var.ContextKey;
+import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.KeyedDerivative;
 
 public class StreamingSum<VarKey> implements Scalar<VarKey> {
@@ -48,7 +48,7 @@ public class StreamingSum<VarKey> implements Scalar<VarKey> {
   }
 
   @Override
-  public double d(ContextKey<VarKey> key) {
+  public double d(IndexedKey<VarKey> key) {
     double sum = 0;
     for (Scalar<VarKey> v : components) {
       sum += v.d(key);

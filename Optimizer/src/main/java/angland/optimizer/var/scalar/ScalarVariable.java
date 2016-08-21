@@ -2,16 +2,16 @@ package angland.optimizer.var.scalar;
 
 import java.util.function.Consumer;
 
-import angland.optimizer.var.ContextKey;
+import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.KeyedDerivative;
 
 public class ScalarVariable<VarKey> implements Scalar<VarKey> {
 
-  private final ContextKey<VarKey> key;
+  private final IndexedKey<VarKey> key;
   private final double value;
   private final KeyedDerivative<VarKey> keyedDerivative;
 
-  public ScalarVariable(ContextKey<VarKey> key, double value) {
+  public ScalarVariable(IndexedKey<VarKey> key, double value) {
     super();
     this.key = key;
     this.value = value;
@@ -32,7 +32,7 @@ public class ScalarVariable<VarKey> implements Scalar<VarKey> {
   }
 
   @Override
-  public double d(ContextKey<VarKey> key) {
+  public double d(IndexedKey<VarKey> key) {
     return key.equals(this.key) ? 1 : 0;
   }
 

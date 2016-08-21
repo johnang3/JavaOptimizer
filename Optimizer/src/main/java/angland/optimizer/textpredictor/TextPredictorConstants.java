@@ -3,7 +3,7 @@ package angland.optimizer.textpredictor;
 import angland.optimizer.nn.LstmCellTemplate;
 import angland.optimizer.nn.RnnCellTemplate;
 
-class DemoConstants {
+class TextPredictorConstants {
   static int vocabSize = 10000;
   static int lstmSize = 160;
   static double gradientClipThreshold = .01;

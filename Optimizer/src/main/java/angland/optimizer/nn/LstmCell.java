@@ -1,6 +1,8 @@
 package angland.optimizer.nn;
 
-import angland.optimizer.var.Context;
+import java.util.Map;
+
+import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.matrix.Matrix;
 import angland.optimizer.var.scalar.Scalar;
 
@@ -16,7 +18,7 @@ public class LstmCell<VarKey> implements RnnCell<String> {
   private FeedForwardLayer<String> select;
   private final double gradientClipThreshold;
 
-  public LstmCell(String varPrefix, int size, Context<String> context,
+  public LstmCell(String varPrefix, int size, Map<IndexedKey<String>, Double> context,
       double gradientClipThreshold, boolean constant) {
     this.retain =
         new FeedForwardLayer<>(size, size, v -> v.sigmoid().clipGradient(gradientClipThreshold),
@@ -56,8 +58,8 @@ public class LstmCell<VarKey> implements RnnCell<String> {
 
     Matrix<String> cellOutput = selector.pointwiseMultiply(hiddenModified);
 
-    return new RnnStateTuple<>(hiddenModified.transform(Scalar::cache),
-        cellOutput.transform(x -> x.clipGradient(gradientClipThreshold)));
+    return new RnnStateTuple<>(hiddenModified.transform(Scalar::cache), cellOutput.transform(x -> x
+        .clipGradient(gradientClipThreshold)));
   }
 
   public int getSize() {

@@ -1,8 +1,8 @@
 package angland.optimizer.nn;
 
+import java.util.Map;
 import java.util.stream.Stream;
 
-import angland.optimizer.var.Context;
 import angland.optimizer.var.IndexedKey;
 
 public class PeepholeLstmCellTemplate implements RnnCellTemplate {
@@ -22,7 +22,7 @@ public class PeepholeLstmCellTemplate implements RnnCellTemplate {
   }
 
   @Override
-  public RnnCell<String> create(Context<String> context) {
+  public RnnCell<String> create(Map<IndexedKey<String>, Double> context) {
     return new PeepholeLstmCell(varPrefix, size, context, gradientClipThreshold, isConstant);
   }
 

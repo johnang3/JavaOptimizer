@@ -1,6 +1,6 @@
 package angland.optimizer.textpredictor;
 
-import static angland.optimizer.textpredictor.DemoConstants.vocabSize;
+import static angland.optimizer.textpredictor.TextPredictorConstants.vocabSize;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 import angland.optimizer.ngram.NGramTrainer;
 
-public class LstmDemoTrainer {
+public class TextPredictionTrainer {
 
   public static void main(String[] args) throws IOException {
     train(args[0], args[1], args[2]);
@@ -27,8 +27,8 @@ public class LstmDemoTrainer {
       throws IOException {
     int numThreads = Integer.parseInt(System.getProperty("TRAIN_THREADS"));
     System.out.println("Initializing trainer.  Numthreads: " + numThreads);
-    System.out.println("LstmSize " + DemoConstants.lstmSize);
-    System.out.println("GradientClipThreshold " + DemoConstants.gradientClipThreshold);
+    System.out.println("LstmSize " + TextPredictorConstants.lstmSize);
+    System.out.println("GradientClipThreshold " + TextPredictorConstants.gradientClipThreshold);
     int samples = 100;
     int batchSize = 50;
     int saveInterval = 4;
@@ -71,7 +71,7 @@ public class LstmDemoTrainer {
     try {
       es = Executors.newFixedThreadPool(numThreads);
       NGramTrainer.train(es, trainSentences, new File(contextFile), vocabSize,
-          DemoConstants.getTemplate(false), batchSize, saveInterval, gradientMultiplier, samples);
+          TextPredictorConstants.getTemplate(false), batchSize, saveInterval, gradientMultiplier, samples);
     } finally {
       if (es != null) {
         es.shutdown();

@@ -13,17 +13,16 @@ import java.util.stream.Stream;
 import angland.optimizer.nn.RnnCell;
 import angland.optimizer.nn.RnnCellTemplate;
 import angland.optimizer.nn.RnnStateTuple;
-import angland.optimizer.var.Context;
 import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.matrix.ArrayMatrixValue;
 import angland.optimizer.var.matrix.Matrix;
-import angland.optimizer.var.scalar.Scalar;
 import angland.optimizer.var.scalar.MappedDerivativeScalar;
+import angland.optimizer.var.scalar.Scalar;
 import angland.optimizer.var.scalar.StreamingSum;
 
 public class NGramPredictor {
 
-  private final Context<String> context;
+  private final Map<IndexedKey<String>, Double> context;
   private final Matrix<String> embedding;
   private final Matrix<String> responseBias;
   private final RnnCell<String> cell;
@@ -43,8 +42,8 @@ public class NGramPredictor {
             IndexedKey.getAllMatrixKeys("responseBias", 1, vocabulary).stream()));
   }
 
-  public NGramPredictor(int vocabulary, RnnCellTemplate cellTemplate, Context<String> context,
-      boolean constant) {
+  public NGramPredictor(int vocabulary, RnnCellTemplate cellTemplate,
+      Map<IndexedKey<String>, Double> context, boolean constant) {
     this.embedding =
         Matrix.varOrConst("embedding", cellTemplate.getSize(), vocabulary, context, constant);
     this.responseBias = Matrix.varOrConst("responseBias", 1, vocabulary, context, constant);
@@ -52,16 +51,14 @@ public class NGramPredictor {
     this.context = context;
   }
 
-  public Context<String> getContext() {
+  public Map<IndexedKey<String>, Double> getContext() {
     return context;
   }
 
 
   public List<Integer> predictNext(List<Integer> inputInts, int predictTokens, int unkIdx) {
-    Matrix<String> hiddenState =
-        Matrix.repeat(Scalar.constant(0), cell.getSize(), 1);
-    Matrix<String> lastOutput =
-        Matrix.repeat(Scalar.constant(0), cell.getSize(), 1);
+    Matrix<String> hiddenState = Matrix.repeat(Scalar.constant(0), cell.getSize(), 1);
+    Matrix<String> lastOutput = Matrix.repeat(Scalar.constant(0), cell.getSize(), 1);
     for (int i : inputInts) {
       Matrix<String> selectedCol = embedding.getColumn(Scalar.constant(i));
 
@@ -73,8 +70,7 @@ public class NGramPredictor {
     ArrayMatrixValue.Builder<String> unkRemoverBuilder =
         new ArrayMatrixValue.Builder<>(embedding.getWidth(), 1);
     for (int i = 0; i < embedding.getWidth(); ++i) {
-      unkRemoverBuilder
-          .set(i, 0, i == unkIdx ? Scalar.constant(0) : Scalar.constant(1));
+      unkRemoverBuilder.set(i, 0, i == unkIdx ? Scalar.constant(0) : Scalar.constant(1));
     }
     ArrayMatrixValue<String> unkRemover = unkRemoverBuilder.build();
     List<Integer> outputs = new ArrayList<>();
@@ -100,8 +96,7 @@ public class NGramPredictor {
       throw new IllegalArgumentException("Can only compute loss on at least two elements.");
     }
     List<Scalar<String>> lossComponents = new ArrayList<>();
-    Matrix<String> hiddenState =
-        Matrix.repeat(Scalar.constant(0), cell.getSize(), 1);
+    Matrix<String> hiddenState = Matrix.repeat(Scalar.constant(0), cell.getSize(), 1);
     for (int i = 0; i < inputInts.size() - 1; ++i) {
       int input = inputInts.get(i);
       int output = inputInts.get(i + 1);
@@ -109,14 +104,12 @@ public class NGramPredictor {
       RnnStateTuple<String> inputState = new RnnStateTuple<>(hiddenState, selectedCol);
       RnnStateTuple<String> outputState = cell.apply(inputState);
       hiddenState = outputState.getHiddenState();
-      List<Integer> selectedIndices =
-          Matrix.selectAndSample(embedding.getWidth(), samples, output);
+      List<Integer> selectedIndices = Matrix.selectAndSample(embedding.getWidth(), samples, output);
       Matrix<String> sampledEmbedding = embedding.getColumns(selectedIndices).transpose();
       Matrix<String> sampledBias = responseBias.getColumns(selectedIndices);
       Matrix<String> softmaxInput =
-          sampledEmbedding.streamingTimes(
-              outputState.getExposedState().transform(Scalar::cache)).plus(
-              sampledBias.transpose());
+          sampledEmbedding.streamingTimes(outputState.getExposedState().transform(Scalar::cache))
+              .plus(sampledBias.transpose());
       Scalar<String> max = softmaxInput.get(0, 0);
       for (int j = 1; j < softmaxInput.getHeight(); ++j) {
         if (softmaxInput.get(j, 0).value() > max.value()) {
@@ -126,13 +119,13 @@ public class NGramPredictor {
       Scalar<String> maxConstant = max.toConstant();
       softmaxInput = softmaxInput.transform(x -> x.minus(maxConstant).exp());
       Scalar<String> softmaxNum = softmaxInput.get(0, 0);
-      Scalar<String> softmaxDenom = softmaxInput.elementSumStream().arrayCache(context);
+      Scalar<String> softmaxDenom = softmaxInput.elementSumStream().cache();
       Scalar<String> epsilon = Scalar.constant(.0001);
       Scalar<String> softmaxOfCorrectIdx =
           softmaxNum.divide(softmaxDenom).plus(epsilon).ln().cache();
       lossComponents.add(softmaxOfCorrectIdx);
     }
-    return new StreamingSum<>(lossComponents).arrayCache(context).times(Scalar.constant(-1))
+    return new StreamingSum<>(lossComponents).cache().times(Scalar.constant(-1))
         .divide(Scalar.constant(inputInts.size() - 1));
   }
 

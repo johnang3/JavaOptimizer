@@ -1,6 +1,6 @@
 package angland.optimizer.textpredictor;
 
-import static angland.optimizer.textpredictor.DemoConstants.vocabSize;
+import static angland.optimizer.textpredictor.TextPredictorConstants.vocabSize;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,16 +12,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import angland.optimizer.ngram.NGramPredictor;
 import angland.optimizer.nn.RnnCellTemplate;
 import angland.optimizer.saver.StringContext;
-import angland.optimizer.var.Context;
-import angland.optimizer.var.ContextTemplate;
+import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.scalar.Scalar;
 
-public class LstmDemoValidator {
+public class TextPredictionValidator {
 
   public static void main(String[] args) throws FileNotFoundException, IOException {
     printLoss(args[0], args[1], args[2]);
@@ -70,11 +70,9 @@ public class LstmDemoValidator {
     }
     System.out.println("Done loading train data.");
     System.out.println("Validation sequences: " + trainSentences.size());
-    RnnCellTemplate template = DemoConstants.getTemplate(true);
-    ContextTemplate<String> contextTemplate =
-        new ContextTemplate<>(NGramPredictor.getKeys(vocabSize, template).collect(
-            Collectors.toList()));
-    Context<String> context = contextTemplate.createContext(StringContext.loadContext(contextFile));
+    RnnCellTemplate template = TextPredictorConstants.getTemplate(true);
+
+    Map<IndexedKey<String>, Double> context = StringContext.loadContext(contextFile);
 
     NGramPredictor predictor = new NGramPredictor(vocabSize, template, context, true);
     Scalar<String> loss = Scalar.constant(0.0);

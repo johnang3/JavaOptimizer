@@ -15,44 +15,33 @@ public class CalculationTest {
 
   private static final double TOLERANCE = 10e-6;
 
-  private void testDerivative(double expected, Scalar<String> scalar, String key,
-      Context<String> context) {
-    ContextKey<String> cKey = context.getContextTemplate().getContextKey(IndexedKey.scalarKey(key));
+  private void testDerivative(double expected, Scalar<String> scalar, String key) {
+    IndexedKey<String> cKey = IndexedKey.scalarKey(key);
     assertEquals(expected, scalar.d(cKey), TOLERANCE);
     assertEquals(expected, scalar.getGradient().getOrDefault(cKey, 0.0), TOLERANCE);
-    assertEquals(expected, scalar.arrayCache(context).getGradient().getOrDefault(cKey, 0.0),
-        TOLERANCE);
   }
 
   @Test
   public void testConstant() {
     Scalar<String> fiveCalced = Scalar.constant(5.0);
     assertEquals(5.0, fiveCalced.value(), TOLERANCE);
-    testDerivative(0, fiveCalced, "x", ContextTemplate.simpleContext(new HashMap<>()));
+    testDerivative(0, fiveCalced, "x");
   }
 
   @Test
   public void testVar() {
-    Map<IndexedKey<String>, Double> context = new HashMap<>();
-    context.put(IndexedKey.scalarKey("x"), 5.0);
-    Context<String> ctx = ContextTemplate.simpleContext(context);
-    Scalar<String> x = Scalar.var("x", ctx);
+    Scalar<String> x = Scalar.var("x", 5.0);
     assertEquals(5.0, x.value(), TOLERANCE);
-    testDerivative(1, x, "x", ctx);
+    testDerivative(1, x, "x");
   }
 
   @Test
   public void testAdd() {
-    Map<IndexedKey<String>, Double> context = new HashMap<>();
-    context.put(IndexedKey.scalarKey("a"), 3.0);
-    context.put(IndexedKey.scalarKey("b"), 4.0);
-    Context<String> ctx = ContextTemplate.simpleContext(context);
-    Scalar<String> result = Scalar.var("a", ctx).plus(Scalar.var("b", ctx));
+    Scalar<String> result = Scalar.var("a", 3.0).plus(Scalar.var("b", 4.0));
     assertEquals(7.0, result.value(), TOLERANCE);
-    assertEquals(1.0, result.d(ctx.getContextTemplate().getContextKey(IndexedKey.scalarKey("a"))),
-        TOLERANCE);
-    testDerivative(1.0, result, "a", ctx);
-    testDerivative(1.0, result, "b", ctx);
+    assertEquals(1.0, result.d(IndexedKey.scalarKey("a")), TOLERANCE);
+    testDerivative(1.0, result, "a");
+    testDerivative(1.0, result, "b");
   }
 
   @Test
@@ -60,21 +49,17 @@ public class CalculationTest {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
     context.put(IndexedKey.scalarKey("a"), 3.0);
     context.put(IndexedKey.scalarKey("b"), 4.0);
-    Context<String> ctx = ContextTemplate.simpleContext(context);
-    Scalar<String> result = Scalar.var("a", ctx).minus(Scalar.var("b", ctx));
+    Scalar<String> result = Scalar.var("a", context).minus(Scalar.var("b", context));
     assertEquals(-1.0, result.value(), TOLERANCE);
-    testDerivative(1.0, result, "a", ctx);
-    testDerivative(-1.0, result, "b", ctx);
+    testDerivative(1.0, result, "a");
+    testDerivative(-1.0, result, "b");
   }
 
   @Test
   public void testVarTimesScalar() {
-    Map<IndexedKey<String>, Double> context = new HashMap<>();
-    context.put(IndexedKey.scalarKey("x"), 5.0);
-    Context<String> ctx = ContextTemplate.simpleContext(context);
-    Scalar<String> result = Scalar.var("x", ctx).times(Scalar.constant(5));
+    Scalar<String> result = Scalar.var("x", 5).times(Scalar.constant(5));
     assertEquals(25.0, result.value(), TOLERANCE);
-    testDerivative(5.0, result, "x", ctx);
+    testDerivative(5.0, result, "x");
   }
 
   @Test
@@ -82,11 +67,10 @@ public class CalculationTest {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
     context.put(IndexedKey.scalarKey("a"), 2.0);
     context.put(IndexedKey.scalarKey("b"), 3.0);
-    Context<String> ctx = ContextTemplate.simpleContext(context);
-    Scalar<String> result = Scalar.var("a", ctx).times(Scalar.var("b", ctx));
+    Scalar<String> result = Scalar.var("a", context).times(Scalar.var("b", context));
     assertEquals(6.0, result.value(), TOLERANCE);
-    testDerivative(3.0, result, "a", ctx);
-    testDerivative(2.0, result, "b", ctx);
+    testDerivative(3.0, result, "a");
+    testDerivative(2.0, result, "b");
   }
 
   @Test
@@ -94,21 +78,19 @@ public class CalculationTest {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
     context.put(IndexedKey.scalarKey("a"), 1.0);
     context.put(IndexedKey.scalarKey("b"), 2.0);
-    Context<String> ctx = ContextTemplate.simpleContext(context);
-    Scalar<String> result = Scalar.var("a", ctx).divide(Scalar.var("b", ctx));
+    Scalar<String> result = Scalar.var("a", context).divide(Scalar.var("b", context));
     assertEquals(.5, result.value(), TOLERANCE);
-    testDerivative(.5, result, "a", ctx);
-    testDerivative(-.25, result, "b", ctx);
+    testDerivative(.5, result, "a");
+    testDerivative(-.25, result, "b");
   }
 
   @Test
   public void testVarPower() {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
     context.put(IndexedKey.scalarKey("a"), 3.0);
-    Context<String> ctx = ContextTemplate.simpleContext(context);
-    Scalar<String> result = Scalar.var("a", ctx).power(2).power(2);
+    Scalar<String> result = Scalar.var("a", context).power(2).power(2);
     assertEquals(81.0, result.value(), TOLERANCE);
-    testDerivative(108.0, result, "a", ctx);
+    testDerivative(108.0, result, "a");
   }
 
 
@@ -122,47 +104,43 @@ public class CalculationTest {
   public void testLnDerivative() {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
     context.put(IndexedKey.scalarKey("a"), .5);
-    Context<String> ctx = ContextTemplate.simpleContext(context);
-    Scalar<String> a = Scalar.var("a", ctx);
-    testDerivative(6.0, a.power(3).ln(), "a", ctx);
+    Scalar<String> a = Scalar.var("a", context);
+    testDerivative(6.0, a.power(3).ln(), "a");
   }
 
   @Test
   public void testExpDerivative() {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
     context.put(IndexedKey.scalarKey("a"), 3.0);
-    Context<String> ctx = ContextTemplate.simpleContext(context);
-    Scalar<String> a = Scalar.var("a", ctx);
-    testDerivative(5.0 * Math.exp(15), a.times(Scalar.constant(5)).exp(), "a", ctx);
+    Scalar<String> a = Scalar.var("a", context);
+    testDerivative(5.0 * Math.exp(15), a.times(Scalar.constant(5)).exp(), "a");
   }
 
   @Test
   public void testSigmoid() {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
     context.put(IndexedKey.scalarKey("a"), .75);
-    Context<String> ctx = ContextTemplate.simpleContext(context);
-    Scalar<String> a = Scalar.var("a", ctx);
+    Scalar<String> a = Scalar.var("a", context);
     Scalar<String> sigmoidPointNineA = a.times(Scalar.constant(.9)).sigmoid();
     assertEquals(.662622, sigmoidPointNineA.value(), TOLERANCE);
-    testDerivative(.201199, sigmoidPointNineA, "a", ctx);
+    testDerivative(.201199, sigmoidPointNineA, "a");
   }
 
   @Test
   public void testTanH() {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
     context.put(IndexedKey.scalarKey("a"), .75);
-    Context<String> ctx = ContextTemplate.simpleContext(context);
-    Scalar<String> a = Scalar.var("a", ctx);
+    Scalar<String> a = Scalar.var("a", context);
     Scalar<String> tanhPointNineA = a.times(Scalar.constant(.9)).tanh();
     assertEquals(.588259, tanhPointNineA.value(), TOLERANCE);
-    testDerivative(.588556, tanhPointNineA, "a", ctx);
+    testDerivative(.588556, tanhPointNineA, "a");
   }
 
   @Test
   public void testZeroEmptiesDerivativeStream() {
     Map<IndexedKey<String>, Double> context = new HashMap<>();
     context.put(IndexedKey.scalarKey("a"), 3.0);
-    Scalar<String> a = Scalar.var("a", ContextTemplate.simpleContext(context));
+    Scalar<String> a = Scalar.var("a", context);
     Scalar<String> aTimesZero = a.times(Scalar.constant(0));
     AtomicInteger i = new AtomicInteger(0);
     aTimesZero.actOnKeyedDerivatives(x -> i.incrementAndGet());

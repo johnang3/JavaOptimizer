@@ -2,10 +2,10 @@ package angland.optimizer.nn;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import angland.optimizer.var.Context;
 import angland.optimizer.var.IndexedKey;
 
 public class FeatureGroupRnnCellTemplate implements RnnCellTemplate {
@@ -43,7 +43,7 @@ public class FeatureGroupRnnCellTemplate implements RnnCellTemplate {
   }
 
   @Override
-  public RnnCell<String> create(Context<String> context) {
+  public RnnCell<String> create(Map<IndexedKey<String>, Double> context) {
     List<RnnCell<String>> cells =
         templates.stream().map(t -> t.create(context)).collect(Collectors.toList());
     return new FeatureGroupRnnCell(size, cells, selection);

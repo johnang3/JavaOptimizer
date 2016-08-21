@@ -1,9 +1,9 @@
 package angland.optimizer.nn;
 
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import angland.optimizer.var.Context;
 import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.matrix.Matrix;
 import angland.optimizer.var.scalar.Scalar;
@@ -17,13 +17,12 @@ public class FeedForwardLayer<VarKey> {
   private final Function<Scalar<VarKey>, Scalar<VarKey>> transformation;
 
   public FeedForwardLayer(int inputSize, int outputSize,
-      Function<Scalar<VarKey>, Scalar<VarKey>> transformation, VarKey weightKey,
-      VarKey biasKey, Context<VarKey> context, boolean constant) {
+      Function<Scalar<VarKey>, Scalar<VarKey>> transformation, VarKey weightKey, VarKey biasKey,
+      Map<IndexedKey<VarKey>, Double> context, boolean constant) {
     super();
     this.inputSize = inputSize;
     this.outputSize = outputSize;
-    this.weights =
-        Matrix.varOrConst(weightKey, this.outputSize, this.inputSize, context, constant);
+    this.weights = Matrix.varOrConst(weightKey, this.outputSize, this.inputSize, context, constant);
     this.biases = Matrix.varOrConst(biasKey, this.outputSize, 1, context, constant);
     this.transformation = transformation;
 

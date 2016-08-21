@@ -19,7 +19,7 @@ public class DerivativeMap<VarKey> {
     this.buckets = new KeyedDerivativeMapNode[initialArraySize];
   }
 
-  public double get(ContextKey<VarKey> key) {
+  public double get(IndexedKey<VarKey> key) {
     KeyedDerivativeMapNode<VarKey> node = buckets[Math.abs(key.hashCode()) % buckets.length];
     while (node != null) {
       if (key.equals(node.getKey())) {
@@ -49,7 +49,7 @@ public class DerivativeMap<VarKey> {
     }
   }
 
-  public void merge(ContextKey<VarKey> key, double value) {
+  public void merge(IndexedKey<VarKey> key, double value) {
     KeyedDerivativeMapNode<VarKey> node = buckets[Math.abs(key.hashCode()) % buckets.length];
     while (node != null) {
       if (node.getKey().equals(key)) {

@@ -7,15 +7,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.stream.Collectors;
 
 import angland.optimizer.Optimizer;
 import angland.optimizer.Range;
 import angland.optimizer.nn.RnnCellTemplate;
 import angland.optimizer.saver.StringContext;
-import angland.optimizer.var.Context;
-import angland.optimizer.var.ContextKey;
-import angland.optimizer.var.ContextTemplate;
+import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.KeyedDerivative;
 import angland.optimizer.var.scalar.Scalar;
 
@@ -24,23 +21,21 @@ public class NGramTrainer {
   public static void train(ExecutorService es, List<List<Integer>> trainSentences,
       File contextPath, int vocabSize, RnnCellTemplate cellTemplate, int batchSize,
       int saveInterval, double stepDistance, int samples) throws IOException {
-    ContextTemplate<String> contextTemplate =
-        new ContextTemplate<>(NGramPredictor.getKeys(vocabSize, cellTemplate).collect(
-            Collectors.toList()));
-    Context<String> context = null;
+    Map<IndexedKey<String>, Double> context = null;
     long tokenCount = 0;
     if (contextPath.exists()) {
       System.out.println("Loading context " + contextPath);
-      context = contextTemplate.createContext(StringContext.loadContext(contextPath));
+      context = StringContext.loadContext(contextPath);
       System.out.println("Load complete.");
     } else {
       System.out.println("Initializing context " + contextPath);
-      context = contextTemplate.randomContext();
+      Map<IndexedKey<String>, Double> tmpContext = new HashMap<>();
+      cellTemplate.getKeys().forEach(k -> tmpContext.put(k, 2 * Math.random() - 1));
+      context = tmpContext;
       System.out.println("New context initialized.");
     }
-    Map<ContextKey<String>, Range> variableRanges = new HashMap<>();
-    context.getContextTemplate().getContextKeys()
-        .forEach(k -> variableRanges.put(k, new Range(-1, 1)));
+    Map<IndexedKey<String>, Range> variableRanges = new HashMap<>();
+    context.keySet().forEach(k -> variableRanges.put(k, new Range(-1, 1)));
     NGramPredictor predictor = new NGramPredictor(vocabSize, cellTemplate, context, false);
 
     long startTime = System.currentTimeMillis();
@@ -53,9 +48,7 @@ public class NGramTrainer {
         tokenCount += sequence.size();
       }
       Scalar<String> loss = predictor.getBatchLoss(batch, es, samples);
-      context =
-          contextTemplate.createContext(Optimizer.step(loss, context.asMap(),
-              variableRanges, stepDistance));
+      context = Optimizer.step(loss, context, variableRanges, stepDistance);
       predictor = new NGramPredictor(vocabSize, cellTemplate, context, false);
       cumulativeLoss = cumulativeLoss.plus(loss);
       if (i % saveInterval == 0) {
@@ -66,7 +59,7 @@ public class NGramTrainer {
         System.out.println("Batch loss " + cumulativeLoss.value());
         System.out.println("Tokens per second " + tokensPerSecond);
         System.out.println("Sequence per second " + sequencesPerSecond);
-        StringContext.saveContext(context.asMap(), contextPath);
+        StringContext.saveContext(context, contextPath);
       }
     }
 

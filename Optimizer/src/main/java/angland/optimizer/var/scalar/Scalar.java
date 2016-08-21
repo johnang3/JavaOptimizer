@@ -1,12 +1,9 @@
 package angland.optimizer.var.scalar;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import angland.optimizer.var.Context;
-import angland.optimizer.var.ContextKey;
 import angland.optimizer.var.DerivativeMap;
 import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.KeyedDerivative;
@@ -26,11 +23,21 @@ public interface Scalar<VarKey> {
 
   public void actOnKeyedDerivatives(Consumer<KeyedDerivative<VarKey>> consumer);
 
-  public double d(ContextKey<VarKey> key);
+  public double d(IndexedKey<VarKey> key);
+
+  /**
+   * Returns the derivative with respect to a scalar of the specified name.
+   * 
+   * @param key
+   * @return
+   */
+  public default double d(VarKey key) {
+    return d(IndexedKey.scalarKey(key));
+  }
 
 
-  public default Map<ContextKey<VarKey>, Double> getGradient() {
-    Map<ContextKey<VarKey>, Double> gradient = new HashMap<>();
+  public default Map<IndexedKey<VarKey>, Double> getGradient() {
+    Map<IndexedKey<VarKey>, Double> gradient = new HashMap<>();
     actOnKeyedDerivatives(kd -> gradient.merge(kd.getKey(), kd.getValue(), Double::sum));
     return gradient;
   }
@@ -39,22 +46,30 @@ public interface Scalar<VarKey> {
     return new ScalarConstant<>(value);
   }
 
-  public static <VarKey> Scalar<VarKey> var(VarKey key, Context<VarKey> context) {
-    return var(context.getContextTemplate().getContextKey(IndexedKey.scalarKey(key)), context);
+  public static <VarKey> Scalar<VarKey> var(IndexedKey<VarKey> key, double value) {
+    return new ScalarVariable<>(key, value);
   }
 
-  public static <VarKey> Scalar<VarKey> varOrConst(VarKey key, Context<VarKey> context,
-      boolean constant) {
-    return varOrConst(context.getContextTemplate().getContextKey(IndexedKey.scalarKey(key)),
-        context, constant);
+  public static <VarKey> Scalar<VarKey> var(VarKey key, Map<IndexedKey<VarKey>, Double> context) {
+    return var(IndexedKey.scalarKey(key), context);
   }
 
-  public static <VarKey> Scalar<VarKey> varOrConst(ContextKey<VarKey> key, Context<VarKey> context,
-      boolean constant) {
+  public static <VarKey> Scalar<VarKey> var(VarKey key, double value) {
+    return var(IndexedKey.scalarKey(key), value);
+  }
+
+  public static <VarKey> Scalar<VarKey> varOrConst(VarKey key,
+      Map<IndexedKey<VarKey>, Double> context, boolean constant) {
+    return varOrConst(IndexedKey.scalarKey(key), context, constant);
+  }
+
+  public static <VarKey> Scalar<VarKey> varOrConst(IndexedKey<VarKey> key,
+      Map<IndexedKey<VarKey>, Double> context, boolean constant) {
     return constant ? constant(context.get(key)) : var(key, context);
   }
 
-  public static <VarKey> Scalar<VarKey> var(ContextKey<VarKey> key, Context<VarKey> context) {
+  public static <VarKey> Scalar<VarKey> var(IndexedKey<VarKey> key,
+      Map<IndexedKey<VarKey>, Double> context) {
     Double val = context.get(key);
     if (val == null) {
       throw new RuntimeException("No context value for key " + key);
@@ -144,35 +159,7 @@ public interface Scalar<VarKey> {
     return new ClippedGradientScalar<>(this, cutoff);
   }
 
-  public default Scalar<VarKey> arrayCache(Context<VarKey> context) {
-    double[] derivs = getDerivatives(context.getContextTemplate().size());
-    /*
-     * int nonZero = 0; for (double d : derivs) { if (d != 0) { ++nonZero; } }
-     */
-    @SuppressWarnings("unchecked")
-    KeyedDerivative<VarKey>[] keyedDerivs = new KeyedDerivative[derivs.length];
-    List<ContextKey<VarKey>> keys = context.getContextTemplate().getContextKeys();
-    for (int i = 0; i < keyedDerivs.length; ++i) {
-      if (derivs[i] != 0) {
-        keyedDerivs[i] = new KeyedDerivative<>(keys.get(i), derivs[i]);
-      }
-    }
-    return new ArrayCache<>(value(), keyedDerivs);
-    /*
-     * DerivativeMap<VarKey> gradient = new DerivativeMap<>(nonZero); for (int i = 0; i <
-     * derivs.length; ++i) { if (derivs[i] != 0) {
-     * gradient.merge(context.getContextTemplate().getKey(i), (double) derivs[i]); } } return new
-     * MappedDerivativeScalar<>(value(), gradient);
-     */
-  }
 
-  public default double[] getDerivatives(int contextSize) {
-    double[] arr = new double[contextSize];
-    this.actOnKeyedDerivatives(kd -> {
-      arr[kd.getKey().getIdx()] += kd.getValue();
-    });
-    return arr;
-  }
 
   public default Scalar<VarKey> toConstant() {
     return constant(value());

@@ -2,10 +2,10 @@ package angland.optimizer.var.scalar;
 
 import java.util.function.Consumer;
 
-import angland.optimizer.var.ContextKey;
+import angland.optimizer.var.IndexedKey;
 import angland.optimizer.var.KeyedDerivative;
 
-public class ScalarConstant<VarKey> implements Scalar<VarKey> {
+class ScalarConstant<VarKey> implements Scalar<VarKey> {
 
   private final double value;
 
@@ -25,7 +25,7 @@ public class ScalarConstant<VarKey> implements Scalar<VarKey> {
   public void actOnKeyedDerivatives(Consumer<KeyedDerivative<VarKey>> consumer) {}
 
   @Override
-  public double d(ContextKey<VarKey> key) {
+  public double d(IndexedKey<VarKey> key) {
     return 0;
   }
 

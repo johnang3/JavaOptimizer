@@ -8,16 +8,16 @@ import java.util.stream.Collectors;
 
 public class KeyedDerivative<VarKey> {
 
-  private final ContextKey<VarKey> key;
+  private final IndexedKey<VarKey> key;
   protected double value;
 
-  public KeyedDerivative(ContextKey<VarKey> key, double value) {
+  public KeyedDerivative(IndexedKey<VarKey> key, double value) {
     super();
     this.key = key;
     this.value = value;
   }
 
-  public ContextKey<VarKey> getKey() {
+  public IndexedKey<VarKey> getKey() {
     return key;
   }
 
