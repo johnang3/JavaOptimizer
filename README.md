@@ -87,7 +87,7 @@ This modified unbounded objective function is minimized with every iteration, an
 
     Solution<Scalar<String>, String> result =
         Optimizer.optimizeWithConstraints(getResult, x -> x, zeroMinimumConstraints, Scalar::exp,
-            startingPoint, 1.0, 10E-8, 10E-8);
+            startingPoint, 1.0, 1E-8, 1E-8);
     System.out.println(result.getContext().get(IndexedKey.scalarKey("x")));  //prints 1.9999999657714576 for x
     System.out.println(result.getContext().get(IndexedKey.scalarKey("y")));  //prints 1.9999999657714576 for y
 ```
@@ -114,7 +114,7 @@ And a nonlinear program:
     });
     Solution<Scalar<String>, String> result =
         Optimizer.optimizeWithConstraints(getResult, x -> x, zeroMinimumConstraints, Scalar::exp,
-            startingPoint, 1.0, 10E-8, 10E-8);
+            startingPoint, 1.0, 1E-8, 1E-8);
     System.out.println(result.getContext().get(IndexedKey.scalarKey("x"))); //prints 4.000017060503225 for x
     System.out.println(result.getContext().get(IndexedKey.scalarKey("y"))); //prints 5.999982806293364 for y
 
