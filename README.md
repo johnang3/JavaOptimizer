@@ -119,6 +119,8 @@ And a nonlinear program:
     System.out.println(result.getContext().get(IndexedKey.scalarKey("y"))); //prints 5.999982806293364 for y
 
 ```
+##License
 
+This project is distributed under the MIT license.
 
 
